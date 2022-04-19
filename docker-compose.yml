@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:12.3-alpine
+    container_name: share_favplace_db
+    environment:
+      TZ: UTC
+      PGTZ: UTC
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+    volumes:
+      - ./dbdata:/var/lib/postgresql/data
+    ports:
+      - "$DB_PORT:$DB_PORT"
+
+  api:
+    build:
+    context: .
+    args:
+      WORKDIR: $WORKDIR
+    container_name: share_favplace_api
+    environment:
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+    tty: true
+    command: ./mvnw clean spring-boot:run -Dspring-boot.run.jvmArguments="-Xdebug
+            -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:$DEBUG_PORT"
+    volumes:
+      - .:/$WORKDIR
+      - ./.m2:/root/.m2
+    ports:
+      - "$API_PORT:$CONTAINER_PORT"
+      - "$DEBUG_PORT:$DEBUG_PORT"
+    depends_on:
+      - db
