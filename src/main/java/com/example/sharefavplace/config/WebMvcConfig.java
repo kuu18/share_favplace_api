@@ -10,7 +10,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
   
   @Override
   public void addCorsMappings(CorsRegistry registry) {
-    String origin = "http://" + System.getenv("FRONT_URL");
+    String origin = System.getenv("FRONT_URL");
     registry.addMapping("/**")
             .allowedOrigins(origin)
             .allowedMethods("GET", "POST", "PUT", "DELETE");
