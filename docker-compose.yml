@@ -20,7 +20,7 @@ services:
     container_name: share_favplace_api
     environment:
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-      FRONT_URL: "localhost:$FRONT_PORT"
+      FRONT_URL: "http://localhost:$FRONT_PORT"
     tty: true
     command: ./mvnw clean spring-boot:run -Dspring-boot.run.jvmArguments="-Xdebug
             -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:$DEBUG_PORT"
