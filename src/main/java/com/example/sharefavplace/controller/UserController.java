@@ -1,11 +1,15 @@
 package com.example.sharefavplace.controller;
 
+import java.util.List;
+
+import com.example.sharefavplace.model.User;
 import com.example.sharefavplace.param.UserParam;
 import com.example.sharefavplace.service.UserService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +21,11 @@ public class UserController {
 
   @Autowired
   private UserService userService;
+
+  @GetMapping
+  public List<User> getAllUser() {
+    return userService.findAll();
+  }
 
   /**
    * ユーザー新規登録

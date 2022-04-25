@@ -1,5 +1,7 @@
 package com.example.sharefavplace.service;
 
+import java.util.List;
+
 import com.example.sharefavplace.model.User;
 import com.example.sharefavplace.param.UserParam;
 import com.example.sharefavplace.repository.UserRepository;
@@ -13,6 +15,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
   @Autowired
   UserRepository userRepository;
+
+  /**
+   * 全ユーザー取得
+   * 
+   * @return 全ユーザー
+   */
+  public List<User> findAll() {
+    return userRepository.findAll();
+  }
 
   /**
    * emailによるユーザー取得
