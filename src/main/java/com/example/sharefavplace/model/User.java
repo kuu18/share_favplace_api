@@ -28,5 +28,5 @@ public class User extends AbstractEntity {
   @Column(name = "password")
   private String password;
   @Column(name = "activated")
-  private Boolean activated = false;
+  private Boolean activated;
 }

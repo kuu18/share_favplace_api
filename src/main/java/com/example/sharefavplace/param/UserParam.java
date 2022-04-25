@@ -29,5 +29,5 @@ public class UserParam {
   @Length(min = 8 ,max = 72)
   @Pattern(regexp = "\\A[\\w\\-]+\\z")
   private String password;
-  private Boolean activated;
+  private Boolean activated = false;
 }
