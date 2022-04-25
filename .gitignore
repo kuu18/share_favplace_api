@@ -38,6 +38,7 @@ build/
 dbdata
 mysql/data
 mysql/log
+pgadmin4
 
 ### Java ###
 *.class
