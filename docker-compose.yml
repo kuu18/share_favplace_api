@@ -7,10 +7,24 @@ services:
       PGTZ: UTC
       POSTGRES_USER: $POSTGRES_USER
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      POSTGRES_DB: $POSTGRES_DB
     volumes:
       - ./dbdata:/var/lib/postgresql/data
     ports:
       - "$DB_PORT:$DB_PORT"
+
+  pgadmin4:
+    image: dpage/pgadmin4
+    container_name: pgadmin4
+    ports:
+      - 8888:80
+    volumes:
+      - ./pgadmin4:/var/lib/pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: $PGADMIN_DEFAULT_EMAIL
+      PGADMIN_DEFAULT_PASSWORD: $PGADMIN_DEFAULT_PASSWORD
+    depends_on:
+      - db
 
   api:
     build:

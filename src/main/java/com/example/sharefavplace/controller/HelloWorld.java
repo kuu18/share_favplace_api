@@ -12,7 +12,7 @@ public class HelloWorld {
   @RequestMapping("/hello")
   public Greeting name() {
     String content = "Hello Docker World!!";
-        System.out.println(System.getenv("API_DOMAIN"));
+    System.out.println(System.getenv("API_DOMAIN"));
     return new Greeting(1, content);
   }
 }
