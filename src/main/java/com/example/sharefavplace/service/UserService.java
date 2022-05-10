@@ -2,28 +2,21 @@ package com.example.sharefavplace.service;
 
 import java.util.List;
 
+import com.example.sharefavplace.model.Role;
 import com.example.sharefavplace.model.User;
 import com.example.sharefavplace.param.UserParam;
-import com.example.sharefavplace.repository.UserRepository;
 
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class UserService {
-  @Autowired
-  UserRepository userRepository;
-
+public interface UserService {
   /**
    * 全ユーザー取得
    * 
    * @return 全ユーザー
    */
-  public List<User> findAll() {
-    return userRepository.findAll();
-  }
+  public List<User> findAllUser();
 
   /**
    * emailによるユーザー取得
@@ -31,9 +24,7 @@ public class UserService {
    * @param email
    * @return User
    */
-  public User findByEmail(String email) {
-    return userRepository.findByEmail(email);
-  }
+  public User findByEmail(String email);
   
   /**
    * usernameによるユーザー取得
@@ -41,27 +32,36 @@ public class UserService {
    * @param username
    * @return User
    */
-  public User findByUsername(String username) {
-    return userRepository.findByUsername(username);
-  }
+  public User findByUsername(String username);
 
   /**
-   * レコードの追加
+   * userレコードの追加
    * 
    * @param user
    */
-  public void save(User user) {
-    userRepository.save(user);
-  }
+  public User saveUser(User user);
+
+  /**
+   * roleレコードの追加
+   * 
+   * @param role
+   */
+  public Role saveRole(Role role);
 
   /**
    * レコードの更新
    * 
    * @param user
    */
-  public void update(User user) {
-    userRepository.save(user);
-  }
+  public User updateUser(User user);
+
+  /**
+   * ユーザーにRoleを付与するメソッド
+   * 
+   * @param username
+   * @param rolename
+   */
+  public void addRoleToUser(String username, String rolename);
 
   /**
    * メールアドレスがすでに登録済みならレコードの更新、登録済みでないなら新規登録
@@ -71,18 +71,5 @@ public class UserService {
    * @param userParam
    */
   @Transactional
-  public void checkEmailAndSaveUser(UserParam userParam) {
-    User user = findByEmail(userParam.getEmail());
-    //　メールアドレスがすでに登録されている場合更新処理
-    if (user != null) {
-      userParam.setId(user.getId());
-      BeanUtils.copyProperties(userParam, user);
-      update(user);
-    } else {
-      // メールアドレスがすでに登録されていない場合新規登録
-      user = new User();
-      BeanUtils.copyProperties(userParam, user);
-      save(user);
-    }
-  }
+  public User checkEmailAndSaveUser(UserParam userParam);
 }
