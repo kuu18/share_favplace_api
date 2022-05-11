@@ -9,11 +9,8 @@ import com.example.sharefavplace.custom.validation.UsernameUnique;
 
 import org.hibernate.validator.constraints.Length;
 
-import lombok.Getter;
-import lombok.Setter;
-
-@Setter
-@Getter
+import lombok.Data;
+@Data
 public class UserParam {
   private Integer id;
   @NotBlank

@@ -2,13 +2,9 @@ package com.example.sharefavplace.service;
 
 import java.util.List;
 
-import com.example.sharefavplace.model.Role;
 import com.example.sharefavplace.model.User;
-import com.example.sharefavplace.param.UserParam;
-import com.example.sharefavplace.repository.RoleRepository;
 import com.example.sharefavplace.repository.UserRepository;
 
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
   private final UserRepository userRepository;
-  private final RoleRepository roleRepository;
 
   /**
    * 全ユーザー取得
@@ -76,52 +71,25 @@ public class UserServiceImpl implements UserService {
   }
 
   /**
-   * メールアドレスがすでに登録済みならレコードの更新、登録済みでないなら新規登録するメソッド
-   * Userのactivatedがfalseの場合はemailの重複を許容しているため
-   * Userのactivateがtrueの場合はバリデーションエラー（カスタムバリデーション）
+   * メールアドレスがすでに登録済みならユーザーの更新、登録済みでないなら新規登録するメソッド
+   * Userのactivatedがfalseの場合はemailの重複を許容するため
+   * Userのactivatedがtrueの場合はバリデーションエラー（カスタムバリデーション）
    * 
-   * @param userParam
+   * @param newUser
    * @return User
    */
-  @Override
-  public User checkEmailAndSaveUser(UserParam userParam) {
-    //userParamのemailでユーザー検索
-    User user = findByEmail(userParam.getEmail());
+  public User checkEmailAndSaveUser(User newUser) {
+    //userのemailでユーザー検索
+    User user = findByEmail(newUser.getEmail());
     //　メールアドレスがすでに登録されている場合更新処理
     if (user != null) {
-      userParam.setId(user.getId());
-      BeanUtils.copyProperties(userParam, user);
-      user = updateUser(user);
+      newUser.setId(user.getId());
+      newUser.setCreatedAt(user.getCreatedAt());
+      user = updateUser(newUser);
     } else {
       // メールアドレスがすでに登録されていない場合新規登録
-      user = new User();
-      BeanUtils.copyProperties(userParam, user);
-      user = saveUser(user);
+      user = saveUser(newUser);
     }
     return user;
-  }
-
-  /**
-   * userにroleを付与するメソッド
-   * 
-   * @param username
-   * @param rolename
-   */
-  @Override
-  public void addRoleToUser(String username, String rolename) {
-    User user = userRepository.findByUsername(username);
-    Role role = roleRepository.findByRolename(rolename);
-    user.getRoles().add(role);
-  }
-
-  /**
-   * roleレコードの追加
-   * 
-   * @param role
-   * @return Role
-   */
-  @Override
-  public Role saveRole(Role role) {
-    return roleRepository.save(role);
   }
 }
