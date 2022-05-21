@@ -17,10 +17,10 @@ import lombok.Data;
 
 @Data
 @MappedSuperclass
-public class AbstractEntity {
+public abstract class AbstractEntity {
   /** 登録日時 */
   @Temporal(TemporalType.TIMESTAMP)
-  @Column(name = "created_at", nullable = false)
+  @Column(name = "created_at", nullable = false, updatable = false)
   private Date createdAt;
 
   /** 更新日時 */
