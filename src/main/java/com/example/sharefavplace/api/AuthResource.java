@@ -1,12 +1,10 @@
 package com.example.sharefavplace.api;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -20,8 +18,8 @@ import com.example.sharefavplace.utils.ResponseUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -70,12 +68,12 @@ public class AuthResource {
         return ResponseEntity.ok().body(responseBody);
       } catch (JWTVerificationException e) {
         Map<String, Object> error = new HashMap<>();
-        error.put("error_message", e.getMessage());
+        error.put("error_messages", e.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
       }
     }
     Map<String, Object> error = new HashMap<>();
-    error.put("error_message", "リフレッシュトークンがありません。");
+    error.put("error_messages", "リフレッシュトークンがありません。");
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
   }
 
@@ -86,17 +84,9 @@ public class AuthResource {
    * @param response
    * @return ログアウトメッセージ
    */
-  @PostMapping("/logout")
+  @DeleteMapping("/logout")
   public ResponseEntity<Map<String, String>> logout(HttpServletRequest request, HttpServletResponse response) {
-    Cookie[] cookies = request.getCookies();
-    Arrays.stream(cookies)
-    .filter(cookie -> cookie.getName().equals("refresh_token") || cookie.getName().equals("access_token"))
-    .forEach(cookie -> { 
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
-      }
-    );
+    ResponseUtils.deleteTokenCookie(request, response);
     Map<String, String> responseBody = new HashMap<>();
     responseBody.put("message", "ログアウトしました。");
     return ResponseEntity.ok().body(responseBody);

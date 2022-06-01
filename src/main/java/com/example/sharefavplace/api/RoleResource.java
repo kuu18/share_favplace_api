@@ -20,7 +20,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/roles")
 @RequiredArgsConstructor
 public class RoleResource {
   
@@ -33,7 +33,7 @@ public class RoleResource {
    * @param bindingResult
    * @return 新規登録したRole
    */
-  @PostMapping("/role/create")
+  @PostMapping("/create")
   public ResponseEntity<Role> saveRole(@RequestBody @Validated RoleParam param, BindingResult bindingResult) {
     if(bindingResult.hasErrors()){
       //TODO
@@ -50,7 +50,7 @@ public class RoleResource {
    * @param param
    * @return 
    */
-  @PostMapping("/role/addtouser")
+  @PostMapping("/addtouser")
   public ResponseEntity<?> addRoletoUser(@RequestBody RoleToUserParam param) {
     roleService.addRoleToUser(param.getUsername(), param.getRolename());
     return ResponseEntity.ok().build();

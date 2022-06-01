@@ -93,6 +93,6 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
   protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
       AuthenticationException failed) throws IOException, ServletException {
     String message = "ユーザー名またはパスワードが違います";
-    ResponseUtils.unauthorizedResponse(response, message);
+    ResponseUtils.unauthorizedResponse(request, response, message);
   }
 }

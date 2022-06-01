@@ -1,6 +1,7 @@
 package com.example.sharefavplace.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.example.sharefavplace.model.Role;
 import com.example.sharefavplace.model.User;
@@ -31,7 +32,8 @@ public class UserService implements UserDetailsService {
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     User user = userRepository.findByUsername(username);
-    if (user == null) throw new UsernameNotFoundException("ユーザーが存在しません。");
+    if (user == null)
+      throw new UsernameNotFoundException("ユーザーが存在しません。");
     return user;
   }
 
@@ -53,7 +55,7 @@ public class UserService implements UserDetailsService {
   public User findByEmail(String email) {
     return userRepository.findByEmail(email);
   }
-  
+
   /**
    * usernameによるユーザー取得
    * 
@@ -72,7 +74,9 @@ public class UserService implements UserDetailsService {
    */
   public User saveUser(User user) {
     user.setPassword(passwordEncoder.encode(user.getPassword()));
-    return userRepository.save(user);
+    User saveUser = userRepository.save(user);
+    addRoleToUser(user.getUsername(), "ROLE_USER");
+    return saveUser;
   }
 
   /**
@@ -84,6 +88,25 @@ public class UserService implements UserDetailsService {
   public User updateUser(User user) {
     user.setPassword(passwordEncoder.encode(user.getPassword()));
     return userRepository.save(user);
+  }
+
+  /**
+   * アクティブ済みでないuserレコードの更新（新規登録）
+   * 
+   * @param user
+   * @return User
+   */
+  public User updateNonActivatedUser(User user) {
+    return userRepository.updateNonActivatedUser(user);
+  }
+
+  /**
+   * userレコードの削除
+   * 
+   * @param user
+   */
+  public void deleteUser(User user) {
+    userRepository.delete(user);
   }
 
   /**
@@ -99,25 +122,25 @@ public class UserService implements UserDetailsService {
   }
 
   /**
-   * メールアドレスがすでに登録済みならユーザーの更新、登録済みでないなら新規登録するメソッド
-   * Userのactivatedがfalseの場合はemailの重複を許容するため
-   * Userのactivatedがtrueの場合はバリデーションエラー（カスタムバリデーション）
+   * メールアドレスまたはユーザーネームがすでに登録済みなら更新、登録済みでないなら新規登録するメソッド
+   * Userのactivatedがfalseの場合は重複を許容するため
+   * Userのactivatedがtrueの場合は重複を許容しない（activatedがtrueの場合はバリデーションエラー）
    * 
    * @param newUser
    * @return User
    */
-  public User checkEmailAndSaveUser(User newUser) {
-    //userのemailでユーザー検索
-    User user = findByEmail(newUser.getEmail());
-    //　メールアドレスがすでに登録されている場合更新処理
-    if (user != null) {
-      newUser.setId(user.getId());
-      user = updateUser(newUser);
-    } else {
-      // メールアドレスがすでに登録されていない場合新規登録
-      user = saveUser(newUser);
-      addRoleToUser(user.getUsername(), "ROLE_USER");
+  public User checkExistsAndSaveUser(User newUser) {
+    // userのemailでユーザー検索
+    Optional<User> emailUser = Optional.ofNullable(findByEmail(newUser.getEmail()));
+    // userのusernameでユーザー検索
+    Optional<User> usernameUser = Optional.ofNullable(findByUsername(newUser.getUsername()));
+    // メールアドレスまたはユーザーネームがすでに登録されている場合更新
+    if (emailUser.isPresent() || usernameUser.isPresent()) {
+      emailUser.ifPresent(user -> newUser.setId(user.getId()));
+      usernameUser.ifPresent(user -> newUser.setId(user.getId()));
+      return updateNonActivatedUser(newUser);
     }
-    return user;
+    // メールアドレスがすでに登録されていない場合新規登録
+    return saveUser(newUser);
   }
 }

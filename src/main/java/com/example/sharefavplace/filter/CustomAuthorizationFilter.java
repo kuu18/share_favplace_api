@@ -38,7 +38,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
     String servletPath = request.getServletPath();
     // 承認のいらないリソースへのパスの場合は何もしない
-    if (servletPath.equals("/api/v1/login") || servletPath.equals("/api/v1/user/create")
+    if (servletPath.equals("/api/v1/login") || servletPath.equals("/api/v1/users/create")
         || servletPath.equals("/api/v1/token/refresh") || servletPath.equals("/api/v1/logout")) {
       // フィルターを抜ける
       filterChain.doFilter(request, response);
@@ -65,7 +65,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
           filterChain.doFilter(request, response);
         } catch (JWTVerificationException e) {
           // トークン認証エラー時のレスポンス
-          ResponseUtils.unauthorizedResponse(response, e.getMessage());
+          ResponseUtils.unauthorizedResponse(request, response, e.getMessage());
         }
         // Cookieのアクセストークンによる承認
       } else if (cookieToken.isPresent()) {
@@ -85,12 +85,12 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
           filterChain.doFilter(request, response);
         } catch (JWTVerificationException e){
           // トークン認証エラー時のレスポンス
-          ResponseUtils.unauthorizedResponse(response, e.getMessage());
+          ResponseUtils.unauthorizedResponse(request, response, e.getMessage());
         }
       } else {
         // トークンがない場合のレスポンス
         String message = "トークンがありません。";
-        ResponseUtils.unauthorizedResponse(response, message);
+        ResponseUtils.unauthorizedResponse(request, response, message);
       }
     }
   }

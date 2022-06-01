@@ -1,21 +1,29 @@
 package com.example.sharefavplace.api;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.sharefavplace.dto.ResponseUserDto;
 import com.example.sharefavplace.mapper.UserParamToUserMapper;
 import com.example.sharefavplace.mapper.UserToUserDtoMapper;
 import com.example.sharefavplace.model.User;
 import com.example.sharefavplace.param.UserParam;
 import com.example.sharefavplace.service.UserService;
+import com.example.sharefavplace.utils.JWTUtils;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,7 +38,7 @@ import lombok.RequiredArgsConstructor;
  * 
  */
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class UserResource {
 
@@ -41,9 +49,32 @@ public class UserResource {
    * 
    * @return 全ユーザー
    */
-  @GetMapping("/users")
-  public ResponseEntity<List<User>> getUsers(HttpServletResponse response, HttpServletRequest request) {
+  @GetMapping
+  public ResponseEntity<List<User>> getUsers(HttpServletRequest request) {
     return ResponseEntity.ok().body(userService.findAllUser());
+  }
+
+  /**
+   * アクセストークンのユーザー取得
+   * 
+   * @param accessToken
+   * @param response
+   * @param request
+   * @return
+   */
+  @GetMapping("/current_user")
+  public ResponseEntity<Map<String, Object>> getCurrentUser(
+    @CookieValue(name = "access_token", required = false) Optional<String> accessToken,
+    HttpServletResponse response,
+    HttpServletRequest request
+  ) {
+    DecodedJWT decodedJWT = JWTUtils.decodeToken(accessToken.get());
+    String username = decodedJWT.getSubject();
+    User user = userService.findByUsername(username);
+    ResponseUserDto responseUser = UserToUserDtoMapper.INSTANCE.userToUserDto(user);
+    Map<String, Object> responseBody = new HashMap<>();
+    responseBody.put("user", responseUser);
+    return ResponseEntity.ok().body(responseBody);
   }
 
   /**
@@ -53,20 +84,26 @@ public class UserResource {
    * @param bindingResult
    * @return 新規登録したユーザー
    */
-  @PostMapping("/user/create")
-  public ResponseEntity<ResponseUserDto> saveUser(@RequestBody @Validated UserParam param, BindingResult bindingResult,
+  @PostMapping("/create")
+  @Transactional
+  public ResponseEntity<Map<String, Object>> saveUser(@RequestBody @Validated UserParam param,
+      BindingResult bindingResult,
       HttpServletRequest request, HttpServletResponse response) {
     if (bindingResult.hasErrors()) {
-      // TODO
+      List<String> errorMessages = bindingResult.getAllErrors().stream().map(error -> error.getDefaultMessage())
+          .collect(Collectors.toList());
+      Map<String, Object> responseBody = new HashMap<>();
+      responseBody.put("error_messages", errorMessages);
+      return ResponseEntity.badRequest().body(responseBody);
     }
     URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/create").toUriString());
     User user = new User();
     user = UserParamToUserMapper.INSTANCE.userParamToUser(param);
-    // メールアドレスがすでに登録されているか判定し、登録する
-    user = userService.checkEmailAndSaveUser(user);
-    // TODO ログイン処理の実装
-    // レスポンスユーザーに変換
+    // メールアドレスまたはユーザーネームがすでに登録されているか判定し、登録する
+    user = userService.checkExistsAndSaveUser(user);
     ResponseUserDto responseUser = UserToUserDtoMapper.INSTANCE.userToUserDto(user);
-    return ResponseEntity.created(uri).body(responseUser);
+    Map<String, Object> responseBody = new HashMap<>();
+    responseBody.put("user", responseUser);
+    return ResponseEntity.created(uri).body(responseBody);
   }
 }

@@ -16,6 +16,7 @@ public class EmailUniqueValidator implements ConstraintValidator<EmailUnique, St
    * 
    * @return 判定結果
    */
+  // TODO ユーザーが新規登録後アクティブ化するまでの（15分）はactivatedがfalseでも重複を許さないようにする
   @Override
   public boolean isValid(String value, ConstraintValidatorContext context) {
     User user = userService.findByEmail(value);
