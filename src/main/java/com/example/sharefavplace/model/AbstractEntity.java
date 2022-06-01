@@ -10,25 +10,22 @@ import javax.persistence.PreUpdate;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import lombok.Getter;
-import lombok.Setter;
-
+import lombok.Data;
 /**
  * DB共通Entity
  */
 
-@Getter
-@Setter
+@Data
 @MappedSuperclass
-public class AbstractEntity {
+public abstract class AbstractEntity {
   /** 登録日時 */
   @Temporal(TemporalType.TIMESTAMP)
-  @Column(name = "created_at")
+  @Column(name = "created_at", nullable = false, updatable = false)
   private Date createdAt;
 
   /** 更新日時 */
   @Temporal(TemporalType.TIMESTAMP)
-  @Column(name = "updated_at")
+  @Column(name = "updated_at", nullable = false)
   private Date updatedAt;
 
   /** 登録日時の設定 */
