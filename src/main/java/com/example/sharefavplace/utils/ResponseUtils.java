@@ -50,7 +50,7 @@ public class ResponseUtils {
     deleteTokenCookie(request, response);
     response.setStatus(HttpStatus.UNAUTHORIZED.value());
     Map<String, String> responseBody = new HashMap<>();
-    responseBody.put("error_messages", message);
+    responseBody.put("error_message", message);
     jsonResponse(responseBody, response);
   }
 

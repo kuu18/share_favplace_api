@@ -14,5 +14,13 @@ public interface UserCustomRepository {
    * @return User
    */
   public User updateNonActivatedUser(User user);
+
+  /**
+   * activatedの更新
+   * 
+   * @param user
+   * @return 更新件数
+   */
+  public int updateActivated(User user);
   
 }

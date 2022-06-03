@@ -1,5 +1,6 @@
 package com.example.sharefavplace.utils;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.stream.Collectors;
 
@@ -19,6 +20,7 @@ public class JWTUtils {
   private static final String secret = System.getenv("JWT_SECRET");
   private static final Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());
   private static final JWTVerifier verifier = JWT.require(algorithm).build();
+  public static final int LIFETIME = 30;
 
   /**
    * アクセストークンの作成
@@ -27,14 +29,14 @@ public class JWTUtils {
    * @param issure
    * @return アクセストークン
    */
-  public static String createAccessToken(User user, String issure, Date expiresAt, Date issuedAt) {
+  public static String createAccessToken(User user, String issure, Date expiresAt) {
     String accessToken = JWT.create()
         // トークンの識別子の設定
         .withSubject(user.getUsername())
         // トークンの有効期限（1時間)の設定
         .withExpiresAt(expiresAt)
-        //トークンの発行日時
-        .withIssuedAt(issuedAt)
+        // トークンの発行日時
+        .withIssuedAt(new Date())
         // トークンの発行者の設定
         .withIssuer(issure)
         // 承認権限の設定
@@ -49,15 +51,38 @@ public class JWTUtils {
    * 
    * @param username
    * @param issure
-   * @return リフレッシュトークン
+   * @return トークン
    */
   public static String createRefreshToken(User user, String issure, Date expiresAt) {
-    String refreshToken = JWT.create()
+    String token = JWT.create()
         .withSubject(user.getUsername())
         .withExpiresAt(expiresAt)
+        .withIssuedAt(new Date())
         .withIssuer(issure)
         .sign(algorithm);
-    return refreshToken;
+    return token;
+  }
+
+  /**
+   * ヘッダートークンの作成
+   * 
+   * @param username
+   * @param issure
+   * @return トークン
+   */
+  public static String createHeaderToken(User user, String issure) {
+    Calendar calendar = Calendar.getInstance();
+    calendar.setTime(new Date());
+    calendar.add(Calendar.MINUTE, LIFETIME);
+    Date expiresAt = calendar.getTime();
+    String token = JWT.create()
+        .withSubject(user.getUsername())
+        .withExpiresAt(expiresAt)
+        .withIssuedAt(new Date())
+        .withIssuer(issure)
+        .withClaim("roles", user.getRoles().stream().map(Role::getRolename).collect(Collectors.toList()))
+        .sign(algorithm);
+    return token;
   }
 
   /**
@@ -66,7 +91,7 @@ public class JWTUtils {
    * @param token
    * @return デコード後のトークン
    */
-  public static DecodedJWT decodeToken(String token) throws JWTVerificationException{
+  public static DecodedJWT decodeToken(String token) throws JWTVerificationException {
     return verifier.verify(token);
   }
 

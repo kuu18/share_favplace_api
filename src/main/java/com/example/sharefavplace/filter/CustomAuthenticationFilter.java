@@ -68,10 +68,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
     calendar.setTime(new Date());
     calendar.add(Calendar.MONTH, 1);
     Date refreshTokenExpiresAt = calendar.getTime();
-    // 発行日
-    Date issuedAt = new Date();
     // トークンの生成
-    String accessToken = JWTUtils.createAccessToken(user, requestUrl, accessTokenExpiresAt, issuedAt);
+    String accessToken = JWTUtils.createAccessToken(user, requestUrl, accessTokenExpiresAt);
     String refreshToken = JWTUtils.createRefreshToken(user, requestUrl, refreshTokenExpiresAt);
     // クッキーにトークンを保存
     ResponseUtils.setAccessTokenToCookie(accessToken, response);

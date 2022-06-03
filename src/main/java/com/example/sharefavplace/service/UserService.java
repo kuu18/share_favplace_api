@@ -101,6 +101,16 @@ public class UserService implements UserDetailsService {
   }
 
   /**
+   * ユーザーのactivated更新
+   * 
+   * @param user
+   * @return
+   */
+  public int updateActivated(User user) {
+    return userRepository.updateActivated(user);
+  }
+
+  /**
    * userレコードの削除
    * 
    * @param user
