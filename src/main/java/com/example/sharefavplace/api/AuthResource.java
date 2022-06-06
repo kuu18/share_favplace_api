@@ -1,6 +1,5 @@
 package com.example.sharefavplace.api;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -10,16 +9,21 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.example.sharefavplace.dto.ResponseUserDto;
+import com.example.sharefavplace.mapper.UserToUserDtoMapper;
 import com.example.sharefavplace.model.User;
 import com.example.sharefavplace.service.UserService;
 import com.example.sharefavplace.utils.JWTUtils;
 import com.example.sharefavplace.utils.ResponseUtils;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -52,29 +56,23 @@ public class AuthResource {
         String username = decodedJWT.getSubject();
         User user = userService.findByUsername(username);
         String issure = request.getRequestURL().toString();
-        // 有効期限1時間
-        Date accessTokenExpiresAt = new Date(System.currentTimeMillis() + 60 * 60 * 1000);
-        // 発行日
-        Date issuedAt = new Date();
         // アクセストークンの再生成
-        String accessToken = JWTUtils.createAccessToken(user, issure, accessTokenExpiresAt, issuedAt);
+        Map<String, Object> accessTokenMap = JWTUtils.createAccessToken(user, issure);
+        String accessToken = accessTokenMap.get("token").toString();
         // トークンをcookieに保存
-        ResponseUtils.setAccessTokenToCookie(accessToken, response);
-        ResponseUtils.setRefreshTokenToCookie(refreshToken.get(), response);
+        ResponseUtils.setTokensToCookie(accessToken, refreshToken.get(), response);
         // レスポンスの生成
         Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("access_token_exp", accessTokenExpiresAt.getTime());
+        responseBody.put("access_token_exp", accessTokenMap.get("exp"));
         responseBody.put("refresh_token_exp", decodedJWT.getExpiresAt().getTime());
         return ResponseEntity.ok().body(responseBody);
       } catch (JWTVerificationException e) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("error_messages", e.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        throw new RuntimeException(e.getMessage());
       }
     }
-    Map<String, Object> error = new HashMap<>();
-    error.put("error_messages", "リフレッシュトークンがありません。");
-    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+    throw new RuntimeException("リフレッシュトークンがありません。");
   }
 
   /**
@@ -87,8 +85,47 @@ public class AuthResource {
   @DeleteMapping("/logout")
   public ResponseEntity<Map<String, String>> logout(HttpServletRequest request, HttpServletResponse response) {
     ResponseUtils.deleteTokenCookie(request, response);
-    Map<String, String> responseBody = new HashMap<>();
-    responseBody.put("message", "ログアウトしました。");
-    return ResponseEntity.ok().body(responseBody);
+    return ResponseEntity.ok().build();
+  }
+
+  /**
+   * メールを認証し、アカウントを有効化する
+   * 
+   * @param autorizationHeader
+   * @param request
+   * @param response
+   * @return
+   */
+  @GetMapping("account_activations")
+  @Transactional
+  public ResponseEntity<Map<String, Object>> accountActivate(@RequestHeader(name = HttpHeaders.AUTHORIZATION) String autorizationHeader,
+  HttpServletRequest request, HttpServletResponse response) {
+    // ヘッダートークンのデコード
+    DecodedJWT decodedJWT = JWTUtils.decodeToken(autorizationHeader.substring(JWTUtils.TOKEN_PREFIX.length()));
+    String username = decodedJWT.getSubject();
+    User user = userService.findByUsername(username);
+    if(!user.getActivated()){
+      // ユーザーのactivatedを更新
+      userService.updateActivated(user);
+      // トークンの生成
+      String issure = request.getRequestURL().toString();
+      Map<String, Object> accessTokenMap = JWTUtils.createAccessToken(user, issure);
+      Map<String, Object> refreshTokenMap = JWTUtils.createRefreshToken(user, issure);
+      String accessToken = accessTokenMap.get("token").toString();
+      String refreshToken = refreshTokenMap.get("token").toString();
+      // クッキーにトークンを保存
+      ResponseUtils.setTokensToCookie(accessToken, refreshToken, response);
+      // レスポンスの生成
+      ResponseUserDto responseUser = UserToUserDtoMapper.INSTANCE.userToUserDto(user);
+      Map<String, Object> responseBody = new HashMap<>();
+      responseBody.put("user", responseUser);
+      responseBody.put("access_token_exp", accessTokenMap.get("exp"));
+      responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));
+      responseBody.put("message", "Welcom To ShareFavplace!!");
+      return ResponseEntity.ok().body(responseBody);
+    }
+    Map<String, Object> error = new HashMap<>();
+    error.put("error_message", "このメールアドレスは認証済みです。");
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
   }
 }

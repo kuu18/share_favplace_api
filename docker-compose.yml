@@ -36,7 +36,12 @@ services:
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
       FRONT_URL: "http://localhost:$FRONT_PORT"
       JWT_SECRET: $JWT_SECRET
-      SPRING_PROFILE_ACTIVE: $SPRING_PROFILE_ACTIVE
+      ENV: $ENV
+      APP_NAME: $APP_NAME
+      EMAIL_HOST: $EMAIL_HOST
+      EMAIL_PORT: $EMAIL_PORT
+      EMAIL_USERNAME: $EMAIL_USERNAME
+      EMAIL_PASSWORD: $EMAIL_PASSWORD
     tty: true
     command: ./mvnw clean spring-boot:run -Dspring-boot.run.jvmArguments="-Xdebug
             -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:$DEBUG_PORT"
