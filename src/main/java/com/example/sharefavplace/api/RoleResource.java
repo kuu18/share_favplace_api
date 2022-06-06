@@ -4,6 +4,7 @@ import java.net.URI;
 
 import com.example.sharefavplace.model.Role;
 import com.example.sharefavplace.param.RoleParam;
+import com.example.sharefavplace.param.RoleToUserParam;
 import com.example.sharefavplace.service.RoleService;
 
 import org.springframework.beans.BeanUtils;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -55,10 +55,4 @@ public class RoleResource {
     roleService.addRoleToUser(param.getUsername(), param.getRolename());
     return ResponseEntity.ok().build();
   }
-}
-
-@Data
-class RoleToUserParam {
-  private String username;
-  private String rolename;
 }
