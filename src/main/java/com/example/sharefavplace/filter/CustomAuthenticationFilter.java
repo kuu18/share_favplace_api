@@ -1,8 +1,6 @@
 package com.example.sharefavplace.filter;
 
 import java.io.IOException;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,6 +17,7 @@ import com.example.sharefavplace.utils.JWTUtils;
 import com.example.sharefavplace.utils.ResponseUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -61,25 +60,19 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
     // 認証されたユーザーの取得
     User user = (User) authentication.getPrincipal();
     String requestUrl = request.getRequestURL().toString();
-    // 有効期限1時間
-    Date accessTokenExpiresAt = new Date(System.currentTimeMillis() + 60 * 60 * 1000);
-    // 有効期限iヶ月
-    Calendar calendar = Calendar.getInstance();
-    calendar.setTime(new Date());
-    calendar.add(Calendar.MONTH, 1);
-    Date refreshTokenExpiresAt = calendar.getTime();
     // トークンの生成
-    String accessToken = JWTUtils.createAccessToken(user, requestUrl, accessTokenExpiresAt);
-    String refreshToken = JWTUtils.createRefreshToken(user, requestUrl, refreshTokenExpiresAt);
+    Map<String, Object> accessTokenMap = JWTUtils.createAccessToken(user, requestUrl);
+    Map<String, Object> refreshTokenMap = JWTUtils.createRefreshToken(user, requestUrl);
+    String accessToken = accessTokenMap.get("token").toString();
+    String refreshToken = refreshTokenMap.get("token").toString();
     // クッキーにトークンを保存
-    ResponseUtils.setAccessTokenToCookie(accessToken, response);
-    ResponseUtils.setRefreshTokenToCookie(refreshToken, response);
+    ResponseUtils.setTokensToCookie(accessToken, refreshToken, response);
     // レスポンスの生成
     ResponseUserDto responseUser = UserToUserDtoMapper.INSTANCE.userToUserDto(user);
     Map<String, Object> responseBody = new HashMap<>();
     responseBody.put("user", responseUser);
-    responseBody.put("access_token_exp", accessTokenExpiresAt);
-    responseBody.put("refresh_token_exp", refreshTokenExpiresAt);
+    responseBody.put("access_token_exp", accessTokenMap.get("exp"));
+    responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));
     ResponseUtils.jsonResponse(responseBody, response);
   }
 
@@ -91,6 +84,9 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
   protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
       AuthenticationException failed) throws IOException, ServletException {
     String message = "ユーザー名またはパスワードが違います";
-    ResponseUtils.unauthorizedResponse(request, response, message);
+    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+    Map<String, String> responseBody = new HashMap<>();
+    responseBody.put("error_message", message);
+    ResponseUtils.jsonResponse(responseBody, response);
   }
 }

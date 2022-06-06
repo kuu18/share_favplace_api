@@ -15,9 +15,9 @@ import javax.servlet.http.HttpServletResponse;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.sharefavplace.utils.JWTUtils;
-import com.example.sharefavplace.utils.ResponseUtils;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,7 +28,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * 
  */
 public class CustomAuthorizationFilter extends OncePerRequestFilter {
-  private static final String TOKEN_PREFIX = "Bearer ";
   /**
    * 全リクエストの最初に呼び出されるリソースへの承認を行うメソッド
    * 
@@ -44,13 +43,15 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
       filterChain.doFilter(request, response);
     } else {
       String autorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-      Optional<Cookie> cookieToken = Arrays.stream(request.getCookies())
+      // cookieが一つも存在しない場合nullとなるため
+      Optional<Cookie[]> cookies = Optional.ofNullable(request.getCookies());
+      Optional<Cookie> cookieToken = Arrays.stream(cookies.orElse(new Cookie[0]))
           .filter(cookie -> cookie.getName().equals("access_token")).reduce((s, cookie) -> cookie);
       // リクエストヘッダーのアクセストークンによる承認
-      if (autorizationHeader != null && autorizationHeader.startsWith(TOKEN_PREFIX)) {
+      if (autorizationHeader != null && autorizationHeader.startsWith(JWTUtils.TOKEN_PREFIX)) {
         try {
           // Authorizationヘッダーからトークンを取得
-          String token = autorizationHeader.substring(TOKEN_PREFIX.length());
+          String token = autorizationHeader.substring(JWTUtils.TOKEN_PREFIX.length());
           // トークンのデコード
           DecodedJWT decodedJWT = JWTUtils.decodeToken(token);
           String username = decodedJWT.getSubject();
@@ -64,10 +65,11 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
           // フィルターを抜ける
           filterChain.doFilter(request, response);
         } catch (JWTVerificationException e) {
-          // トークン認証エラー時のレスポンス
-          ResponseUtils.unauthorizedResponse(request, response, e.getMessage());
+          // トークン認証エラーの場合
+          response.setStatus(HttpStatus.UNAUTHORIZED.value());
+          throw new RuntimeException(e.getMessage());
         }
-        // Cookieのアクセストークンによる承認
+      // Cookieのアクセストークンによる承認
       } else if (cookieToken.isPresent()) {
         try {
           String token = cookieToken.get().getValue();
@@ -84,13 +86,14 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
           // フィルターを抜ける
           filterChain.doFilter(request, response);
         } catch (JWTVerificationException e){
-          // トークン認証エラー時のレスポンス
-          ResponseUtils.unauthorizedResponse(request, response, e.getMessage());
+          // トークン認証エラーの場合
+          response.setStatus(HttpStatus.UNAUTHORIZED.value());
+          throw new RuntimeException(e.getMessage());
         }
       } else {
-        // トークンがない場合のレスポンス
-        String message = "トークンがありません。";
-        ResponseUtils.unauthorizedResponse(request, response, message);
+        // トークンがない場合
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        throw new RuntimeException("トークンがありません。");
       }
     }
   }

@@ -112,12 +112,12 @@ public class UserResource {
     context.setVariable("tokenLimit", JWTUtils.LIFETIME + "分");
     context.setVariable("url", System.getenv("FRONT_URL") + "/activations?token=" + token);
     emailSenderService.send(user.getEmail(),
-        "メールアドレスのご確認",
-        "confirmemail",
-        context);
+      "メールアドレスのご確認",
+      "confirmemail",
+      context);
     Map<String, Object> responseBody = new HashMap<>();
     responseBody.put("message", "メールを送信しました。" + JWTUtils.LIFETIME + "分以内にメール認証を完了してください");
     return ResponseEntity.created(uri).body(responseBody);
   }
-  
+
 }

@@ -2,8 +2,6 @@ package com.example.sharefavplace.utils;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -12,7 +10,6 @@ import javax.servlet.http.HttpServletResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.boot.web.server.Cookie.SameSite;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseCookie.ResponseCookieBuilder;
@@ -23,7 +20,7 @@ import org.springframework.http.ResponseCookie.ResponseCookieBuilder;
  * 
  */
 public class ResponseUtils {
-  private static final Boolean httpsSecureFlag = System.getenv("SPRING_PROFILE_ACTIVE").equals("production");
+  private static final Boolean SECURE = System.getenv("ENV").equals("production");
 
   /**
    * レスポンスボディをjson形式のレスポンスに変換
@@ -41,20 +38,6 @@ public class ResponseUtils {
   }
 
   /**
-   * 認証エラー時のレスポンス
-   * 
-   * @param response
-   * @param message
-   */
-  public static void unauthorizedResponse(HttpServletRequest request, HttpServletResponse response, String message) {
-    deleteTokenCookie(request, response);
-    response.setStatus(HttpStatus.UNAUTHORIZED.value());
-    Map<String, String> responseBody = new HashMap<>();
-    responseBody.put("error_message", message);
-    jsonResponse(responseBody, response);
-  }
-
-  /**
    * アクセストークンをcookieに保存
    * 
    * @param token
@@ -64,9 +47,9 @@ public class ResponseUtils {
     ResponseCookieBuilder cookieBuilder = ResponseCookie.from("access_token", token)
       .maxAge(2592000)
       .httpOnly(true)
-      .secure(httpsSecureFlag)
+      .secure(SECURE)
       .path("/");
-    if(httpsSecureFlag) cookieBuilder.sameSite(SameSite.NONE.attributeValue());
+    if(SECURE) cookieBuilder.sameSite(SameSite.NONE.attributeValue());
     ResponseCookie cookie = cookieBuilder.build();
     response.addHeader("Set-Cookie", cookie.toString());
   }
@@ -81,11 +64,23 @@ public class ResponseUtils {
     ResponseCookieBuilder cookieBuilder = ResponseCookie.from("refresh_token", token)
       .maxAge(2592000)
       .httpOnly(true)
-      .secure(httpsSecureFlag)
+      .secure(SECURE)
       .path("/");
-    if(httpsSecureFlag) cookieBuilder.sameSite(SameSite.NONE.attributeValue());
+    if(SECURE) cookieBuilder.sameSite(SameSite.NONE.attributeValue());
     ResponseCookie cookie = cookieBuilder.build();
     response.addHeader("Set-Cookie", cookie.toString());
+  }
+
+  /**
+   * リフレッシュトークンとアクセストークンをcookieに保存
+   * 
+   * @param accessToken
+   * @param refreshToken
+   * @param response
+   */
+  public static void setTokensToCookie(String accessToken, String refreshToken, HttpServletResponse response) {
+    setAccessTokenToCookie(accessToken, response);
+    setRefreshTokenToCookie(refreshToken, response);
   }
 
   /**

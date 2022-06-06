@@ -1,7 +1,5 @@
 package com.example.sharefavplace.api;
 
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -58,16 +56,14 @@ public class AuthResource {
         String username = decodedJWT.getSubject();
         User user = userService.findByUsername(username);
         String issure = request.getRequestURL().toString();
-        // 有効期限1時間
-        Date accessTokenExpiresAt = new Date(System.currentTimeMillis() + 60 * 60 * 1000);
         // アクセストークンの再生成
-        String accessToken = JWTUtils.createAccessToken(user, issure, accessTokenExpiresAt);
+        Map<String, Object> accessTokenMap = JWTUtils.createAccessToken(user, issure);
+        String accessToken = accessTokenMap.get("token").toString();
         // トークンをcookieに保存
-        ResponseUtils.setAccessTokenToCookie(accessToken, response);
-        ResponseUtils.setRefreshTokenToCookie(refreshToken.get(), response);
+        ResponseUtils.setTokensToCookie(accessToken, refreshToken.get(), response);
         // レスポンスの生成
         Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("access_token_exp", accessTokenExpiresAt.getTime());
+        responseBody.put("access_token_exp", accessTokenMap.get("exp"));
         responseBody.put("refresh_token_exp", decodedJWT.getExpiresAt().getTime());
         return ResponseEntity.ok().body(responseBody);
       } catch (JWTVerificationException e) {
@@ -89,9 +85,7 @@ public class AuthResource {
   @DeleteMapping("/logout")
   public ResponseEntity<Map<String, String>> logout(HttpServletRequest request, HttpServletResponse response) {
     ResponseUtils.deleteTokenCookie(request, response);
-    Map<String, String> responseBody = new HashMap<>();
-    responseBody.put("message", "ログアウトしました。");
-    return ResponseEntity.ok().body(responseBody);
+    return ResponseEntity.ok().build();
   }
 
   /**
@@ -107,8 +101,7 @@ public class AuthResource {
   public ResponseEntity<Map<String, Object>> accountActivate(@RequestHeader(name = HttpHeaders.AUTHORIZATION) String autorizationHeader,
   HttpServletRequest request, HttpServletResponse response) {
     // ヘッダートークンのデコード
-    String TOKEN_PREFIX = "Bearer ";
-    DecodedJWT decodedJWT = JWTUtils.decodeToken(autorizationHeader.substring(TOKEN_PREFIX.length()));
+    DecodedJWT decodedJWT = JWTUtils.decodeToken(autorizationHeader.substring(JWTUtils.TOKEN_PREFIX.length()));
     String username = decodedJWT.getSubject();
     User user = userService.findByUsername(username);
     if(!user.getActivated()){
@@ -116,22 +109,18 @@ public class AuthResource {
       userService.updateActivated(user);
       // トークンの生成
       String issure = request.getRequestURL().toString();
-      Date accessTokenExpiresAt = new Date(System.currentTimeMillis() + 60 * 60 * 1000);
-      Calendar calendar = Calendar.getInstance();
-      calendar.setTime(new Date());
-      calendar.add(Calendar.MONTH, 1);
-      Date refreshTokenExpiresAt = calendar.getTime();
-      String accessToken = JWTUtils.createAccessToken(user, issure, accessTokenExpiresAt);
-      String refreshToken = JWTUtils.createRefreshToken(user, issure, refreshTokenExpiresAt);
+      Map<String, Object> accessTokenMap = JWTUtils.createAccessToken(user, issure);
+      Map<String, Object> refreshTokenMap = JWTUtils.createRefreshToken(user, issure);
+      String accessToken = accessTokenMap.get("token").toString();
+      String refreshToken = refreshTokenMap.get("token").toString();
       // クッキーにトークンを保存
-      ResponseUtils.setAccessTokenToCookie(accessToken, response);
-      ResponseUtils.setRefreshTokenToCookie(refreshToken, response);
+      ResponseUtils.setTokensToCookie(accessToken, refreshToken, response);
       // レスポンスの生成
       ResponseUserDto responseUser = UserToUserDtoMapper.INSTANCE.userToUserDto(user);
       Map<String, Object> responseBody = new HashMap<>();
       responseBody.put("user", responseUser);
-      responseBody.put("access_token_exp", accessTokenExpiresAt.getTime());
-      responseBody.put("refresh_token_exp", refreshTokenExpiresAt.getTime());
+      responseBody.put("access_token_exp", accessTokenMap.get("exp"));
+      responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));
       responseBody.put("message", "Welcom To ShareFavplace!!");
       return ResponseEntity.ok().body(responseBody);
     }
