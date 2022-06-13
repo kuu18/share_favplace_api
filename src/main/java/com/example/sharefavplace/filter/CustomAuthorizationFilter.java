@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.FilterChain;
@@ -13,8 +15,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.sharefavplace.utils.JWTUtils;
+import com.example.sharefavplace.utils.ResponseUtils;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -38,7 +42,8 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
     String servletPath = request.getServletPath();
     // 承認のいらないリソースへのパスの場合は何もしない
     if (servletPath.equals("/api/v1/login") || servletPath.equals("/api/v1/users/create")
-        || servletPath.equals("/api/v1/token/refresh") || servletPath.equals("/api/v1/logout")) {
+        || servletPath.equals("/api/v1/token/refresh") || servletPath.equals("/api/v1/logout")
+        || servletPath.equals("/api/v1/users/password/forget")) {
       // フィルターを抜ける
       filterChain.doFilter(request, response);
     } else {
@@ -67,6 +72,13 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
         } catch (JWTVerificationException e) {
           // トークン認証エラーの場合
           response.setStatus(HttpStatus.UNAUTHORIZED.value());
+          Map<String, String> responseBody = new HashMap<>();
+          if(e.getClass().equals(TokenExpiredException.class)){
+            responseBody.put("error_message", "認証リンクの有効期限が切れています。");
+          }else{
+            responseBody.put("error_message", "認証に失敗しました。");
+          }
+          ResponseUtils.jsonResponse(responseBody, response);
           throw new RuntimeException(e.getMessage());
         }
       // Cookieのアクセストークンによる承認

@@ -72,5 +72,23 @@ public class UserCustomRepositoryImpl implements UserCustomRepository {
     Query query = this.entityManager.createQuery(criteriaUpdate);
     return query.executeUpdate();
   }
+
+  /**
+   * passwordの更新
+   * 
+   * @param user
+   * @return 更新件数
+   * 
+   */
+  @Override
+  public int updatePassword(User user) {
+    CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+    CriteriaUpdate<User> criteriaUpdate = criteriaBuilder.createCriteriaUpdate(User.class);
+    Root<User> root = criteriaUpdate.from(User.class);
+    criteriaUpdate.set(root.get(User_.password), passwordEncoder.encode(user.getPassword()))
+      .where(root.get(User_.id).in(user.getId()));
+    Query query = this.entityManager.createQuery(criteriaUpdate);
+    return query.executeUpdate();
+  }
   
 }

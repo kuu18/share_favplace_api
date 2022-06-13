@@ -80,17 +80,6 @@ public class UserService implements UserDetailsService {
   }
 
   /**
-   * userレコードの更新
-   * 
-   * @param user
-   * @return User
-   */
-  public User updateUser(User user) {
-    user.setPassword(passwordEncoder.encode(user.getPassword()));
-    return userRepository.save(user);
-  }
-
-  /**
    * アクティブ済みでないuserレコードの更新（新規登録）
    * 
    * @param user
@@ -101,10 +90,20 @@ public class UserService implements UserDetailsService {
   }
 
   /**
+   * ユーザーのpassword更新
+   * 
+   * @param user
+   * @return 更新件数
+   */
+  public int updatePassword(User user) {
+    return userRepository.updatePassword(user);
+  }
+
+  /**
    * ユーザーのactivated更新
    * 
    * @param user
-   * @return
+   * @return 更新件数
    */
   public int updateActivated(User user) {
     return userRepository.updateActivated(user);
