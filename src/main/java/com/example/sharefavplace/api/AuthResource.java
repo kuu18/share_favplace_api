@@ -91,17 +91,17 @@ public class AuthResource {
   /**
    * メールを認証し、アカウントを有効化する
    * 
-   * @param autorizationHeader
+   * @param authorizationHeader
    * @param request
    * @param response
    * @return
    */
   @GetMapping("account_activations")
   @Transactional
-  public ResponseEntity<Map<String, Object>> accountActivate(@RequestHeader(name = HttpHeaders.AUTHORIZATION) String autorizationHeader,
+  public ResponseEntity<Map<String, Object>> accountActivate(@RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorizationHeader,
   HttpServletRequest request, HttpServletResponse response) {
     // ヘッダートークンのデコード
-    DecodedJWT decodedJWT = JWTUtils.decodeToken(autorizationHeader.substring(JWTUtils.TOKEN_PREFIX.length()));
+    DecodedJWT decodedJWT = JWTUtils.decodeToken(authorizationHeader.substring(JWTUtils.TOKEN_PREFIX.length()));
     String username = decodedJWT.getSubject();
     User user = userService.findByUsername(username);
     if(!user.getActivated()){

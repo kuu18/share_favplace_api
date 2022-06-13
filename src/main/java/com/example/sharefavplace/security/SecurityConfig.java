@@ -41,7 +41,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
     http.csrf().disable();
     // セッション管理をステートレスに設定
     http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-    http.authorizeRequests().antMatchers("/api/v1/login/**","/api/v1/logout/**", "/api/v1/users/create", "/api/v1/token/refresh/**").permitAll();
+    http.authorizeRequests().antMatchers("/api/v1/login/**", "/api/v1/logout/**", "/api/v1/users/create", "/api/v1/token/refresh/**", "/api/v1/users/password/forget").permitAll();
     http.authorizeRequests().antMatchers(HttpMethod.POST, "/api/v1/role/addtouser").hasAnyAuthority("ROLE_ADMIN");
     http.authorizeRequests().antMatchers("/api/v1/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN");
     http.authorizeRequests().anyRequest().authenticated();

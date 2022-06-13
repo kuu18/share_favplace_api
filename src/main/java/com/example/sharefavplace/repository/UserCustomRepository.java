@@ -22,5 +22,13 @@ public interface UserCustomRepository {
    * @return 更新件数
    */
   public int updateActivated(User user);
+
+  /**
+   * パスワードの更新
+   * 
+   * @param user
+   * @return 更新件数
+   */
+  public int updatePassword(User user);
   
 }
