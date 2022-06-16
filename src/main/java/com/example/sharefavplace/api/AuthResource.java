@@ -10,8 +10,10 @@ import javax.servlet.http.HttpServletResponse;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.sharefavplace.dto.ResponseUserDto;
+import com.example.sharefavplace.mapper.UserParamToUserMapper;
 import com.example.sharefavplace.mapper.UserToUserDtoMapper;
 import com.example.sharefavplace.model.User;
+import com.example.sharefavplace.param.UserParam;
 import com.example.sharefavplace.service.UserService;
 import com.example.sharefavplace.utils.JWTUtils;
 import com.example.sharefavplace.utils.ResponseUtils;
@@ -23,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -89,7 +93,7 @@ public class AuthResource {
   }
 
   /**
-   * メールを認証し、アカウントを有効化する
+   * メールアドレスを認証し、アカウントを有効化する
    * 
    * @param authorizationHeader
    * @param request
@@ -127,5 +131,49 @@ public class AuthResource {
     Map<String, Object> error = new HashMap<>();
     error.put("error_message", "このメールアドレスは認証済みです。");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+  }
+
+  /**
+   * 新しいメールアドレスを認証し、メールアドレスを更新する
+   * 
+   * @param authorizationHeader
+   * @param request
+   * @param response
+   * @return
+   */
+  @PostMapping("account_updateemail")
+  @Transactional
+  public ResponseEntity<Map<String, Object>> accountUpdateEmail(@RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorizationHeader,
+  @RequestBody UserParam param,
+  HttpServletRequest request, HttpServletResponse response) {
+    Map<String, Object> responseBody = new HashMap<>();
+    // ヘッダートークンのデコード
+    DecodedJWT decodedJWT = JWTUtils.decodeToken(authorizationHeader.substring(JWTUtils.TOKEN_PREFIX.length()));
+    String username = decodedJWT.getSubject();
+    User user = userService.findByUsername(username);
+    if(user.getEmail().equals(param.getEmail())) {
+      responseBody.put("error_message", "このメールアドレスは認証済みです。");
+      return ResponseEntity.badRequest().body(responseBody);
+    }
+    // メールアドレスの更新
+    User updateUser = UserParamToUserMapper.INSTANCE.userParamToUser(param);
+    updateUser.setId(user.getId());
+    userService.updateEmail(updateUser);
+    // トークンの生成
+    String issure = request.getRequestURL().toString();
+    Map<String, Object> accessTokenMap = JWTUtils.createAccessToken(user, issure);
+    Map<String, Object> refreshTokenMap = JWTUtils.createRefreshToken(user, issure);
+    String accessToken = accessTokenMap.get("token").toString();
+    String refreshToken = refreshTokenMap.get("token").toString();
+    // クッキーにトークンを保存
+    ResponseUtils.setTokensToCookie(accessToken, refreshToken, response);
+    // レスポンスの生成
+    user.setEmail(updateUser.getEmail());
+    ResponseUserDto responseUser = UserToUserDtoMapper.INSTANCE.userToUserDto(user);
+    responseBody.put("user", responseUser);
+    responseBody.put("access_token_exp", accessTokenMap.get("exp"));
+    responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));
+    responseBody.put("message", "メールアドレスを更新しました。");
+    return ResponseEntity.ok().body(responseBody);
   }
 }

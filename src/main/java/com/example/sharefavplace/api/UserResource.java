@@ -16,19 +16,20 @@ import com.example.sharefavplace.email.EmailSenderService;
 import com.example.sharefavplace.mapper.UserParamToUserMapper;
 import com.example.sharefavplace.mapper.UserToUserDtoMapper;
 import com.example.sharefavplace.model.User;
-import com.example.sharefavplace.param.UpdatePasswordParam;
 import com.example.sharefavplace.param.UserParam;
 import com.example.sharefavplace.service.UserService;
 import com.example.sharefavplace.utils.JWTUtils;
 import com.example.sharefavplace.utils.ResponseUtils;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -64,7 +65,7 @@ public class UserResource {
   }
 
   /**
-   * アクセストークンのユーザー取得
+   * アクセストークンによる現在のユーザー取得
    * 
    * @param accessToken
    * @param response
@@ -94,9 +95,10 @@ public class UserResource {
    */
   @PostMapping("/create")
   @Transactional
-  public ResponseEntity<Map<String, Object>> saveUser(@RequestBody @Validated UserParam param,
-      BindingResult bindingResult,
-      HttpServletRequest request, HttpServletResponse response) {
+  public ResponseEntity<Map<String, Object>> saveUser(
+    @RequestBody @Validated(UserParam.CreateGroup.class) UserParam param,
+    BindingResult bindingResult,
+    HttpServletRequest request, HttpServletResponse response) {
     if (bindingResult.hasErrors()) {
       List<String> errorMessages = bindingResult.getAllErrors().stream().map(error -> error.getDefaultMessage())
           .collect(Collectors.toList());
@@ -127,14 +129,94 @@ public class UserResource {
   }
 
   /**
+   * ユーザー情報の更新
+   * 
+   * @param param
+   * @param request
+   * @return
+   */
+  @RequestMapping("/update")
+  @Transactional
+  public ResponseEntity<Map<String, Object>> updateUser(
+    @RequestBody @Validated(UserParam.UpdateDeleteGroup.class) UserParam param,
+    BindingResult bindingResult,
+    HttpServletRequest request, HttpServletResponse response) {
+    Map<String, Object> responseBody = new HashMap<>();
+    // バリデーションエラーの場合
+    if (bindingResult.hasErrors()) {
+      List<String> errorMessages = bindingResult.getAllErrors().stream().map(error -> error.getDefaultMessage())
+          .collect(Collectors.toList());
+      responseBody.put("error_messages", errorMessages);
+      return ResponseEntity.badRequest().body(responseBody);
+    }
+    User updateUser = new User();
+    updateUser = UserParamToUserMapper.INSTANCE.userParamToUser(param);
+    // ユーザーの更新
+    updateUser = userService.updateUser(updateUser);
+    // トークンの生成
+    String issure = request.getRequestURL().toString();
+    Map<String, Object> accessTokenMap = JWTUtils.createAccessToken(updateUser, issure);
+    Map<String, Object> refreshTokenMap = JWTUtils.createRefreshToken(updateUser, issure);
+    String accessToken = accessTokenMap.get("token").toString();
+    String refreshToken = refreshTokenMap.get("token").toString();
+    // クッキーにトークンを保存
+    ResponseUtils.setTokensToCookie(accessToken, refreshToken, response);
+    ResponseUserDto responseUser = UserToUserDtoMapper.INSTANCE.userToUserDto(updateUser);
+    responseBody.put("user", responseUser);
+    responseBody.put("access_token_exp", accessTokenMap.get("exp"));
+    responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));
+    responseBody.put("message", "ユーザー情報を更新しました。");
+    return ResponseEntity.ok().body(responseBody);
+  }
+
+  /**
+   * メールアドレス更新メール送信
+   * 
+   * @param param
+   * @param bindingResult
+   * @param request
+   * @return レスポンス
+   */
+  @PostMapping("/update/email")
+  @Transactional
+  public ResponseEntity<Map<String, Object>> updateEmail(
+    @RequestBody @Validated(UserParam.UpdateDeleteGroup.class) UserParam param,
+    BindingResult bindingResult,
+    HttpServletRequest request
+  ) {
+    Map<String, Object> responseBody = new HashMap<>();
+    // バリデーションエラーの場合
+    if (bindingResult.hasErrors()) {
+      List<String> errorMessages = bindingResult.getAllErrors().stream().map(error -> error.getDefaultMessage())
+          .collect(Collectors.toList());
+      responseBody.put("error_messages", errorMessages);
+      return ResponseEntity.badRequest().body(responseBody);
+    }
+    Optional<User> user = userService.findById(param.getId());
+    // トークンの生成
+    String issure = request.getRequestURL().toString();
+    String token = JWTUtils.createHeaderToken(user.get(), issure);
+    // メール送信
+    Context context = new Context();
+    context.setVariable("appName", System.getenv("APP_NAME"));
+    context.setVariable("tokenLimit", JWTUtils.LIFETIME + "分");
+    context.setVariable("url", System.getenv("FRONT_URL") + "/account/activations?token=" + token + "&email=" + param.getEmail());
+    emailSenderService.send(param.getEmail(),
+      "メールアドレスのご確認",
+      "updateemail",
+      context);
+    responseBody.put("message", "新しいメールアドレスにメールを送信しました。" + JWTUtils.LIFETIME + "分以内にメール認証を完了してください");
+    return ResponseEntity.ok().body(responseBody);
+  }
+
+  /**
    * パスワード更新
    * 
-   * @param password
-   * @param newPassword
-   * @param id
+   * @param param
    */
   @PostMapping("/update/password")
-  public ResponseEntity<Map<String, String>> updatePassword(@RequestBody UpdatePasswordParam param) {
+  @Transactional
+  public ResponseEntity<Map<String, String>> updatePassword(@RequestBody UserParam param) {
     User user = userService.findByEmail(param.getEmail());
     if(passwordEncoder.matches(param.getPassword(), user.getPassword())){
       user.setPassword(param.getNewPassword());
@@ -153,10 +235,9 @@ public class UserResource {
    * 
    * @param email
    * @param request
-   * @return
    */
   @PostMapping("/password/forget")
-  public ResponseEntity<Map<String, String>> sendEmailResetPassword(@RequestBody UpdatePasswordParam param, HttpServletRequest request) {
+  public ResponseEntity<Map<String, String>> sendEmailResetPassword(@RequestBody UserParam param, HttpServletRequest request) {
     String email = param.getEmail();
     Optional<User> user = Optional.ofNullable(userService.findByEmail(email));
     if(user.isPresent()) {
@@ -188,7 +269,8 @@ public class UserResource {
    * @return
    */
   @PostMapping("/password/reset")
-  public ResponseEntity<Map<String, Object>> passwordReset(@RequestBody UpdatePasswordParam param,
+  @Transactional
+  public ResponseEntity<Map<String, Object>> passwordReset(@RequestBody UserParam param,
   @RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorizationHeader,
   HttpServletRequest request, HttpServletResponse response) {
     DecodedJWT decodedJWT = JWTUtils.decodeToken(authorizationHeader.substring(JWTUtils.TOKEN_PREFIX.length()));
@@ -212,5 +294,32 @@ public class UserResource {
     responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));
     responseBody.put("message", "パスワードを更新しました。");
     return ResponseEntity.ok().body(responseBody);
+  }
+
+  /**
+   * ユーザー削除
+   * 
+   * @param param
+   * @param bindingResult
+   * @return レスポンス
+   */
+  @DeleteMapping("/delete")
+  public ResponseEntity<Map<String, Object>> deletUser(@RequestBody @Validated UserParam param,
+    BindingResult bindingResult) {
+    Map<String, Object> responseBody = new HashMap<>();
+    if(bindingResult.hasErrors()) {
+      List<String> errorMessages = bindingResult.getAllErrors().stream().map(error -> error.getDefaultMessage())
+          .collect(Collectors.toList());
+      responseBody.put("error_messages", errorMessages);
+      return ResponseEntity.badRequest().body(responseBody);
+    }
+    Optional<User> user = userService.findById(param.getId());
+    if (passwordEncoder.matches(param.getPassword(), user.get().getPassword())){
+      userService.deleteUser(user.get());
+      responseBody.put("message", "アカウントを削除しました。");
+      return ResponseEntity.ok().body(responseBody);
+    }
+    responseBody.put("error_message", "パスワードが違います。");
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseBody);
   }
 }

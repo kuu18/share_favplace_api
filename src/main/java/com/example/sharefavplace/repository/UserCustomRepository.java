@@ -8,6 +8,14 @@ import org.springframework.stereotype.Repository;
 public interface UserCustomRepository {
 
   /**
+   * ユーザーの更新
+   * 
+   * @param user
+   * @return 更新件数
+   */
+  public User updateUser(User user);
+
+  /**
    * アクティブ済みでないユーザーの更新（新規登録）
    * 
    * @param user
@@ -22,6 +30,14 @@ public interface UserCustomRepository {
    * @return 更新件数
    */
   public int updateActivated(User user);
+
+  /**
+   * メールアドレスの更新
+   * 
+   * @param user
+   * @return 更新件数
+   */
+  public int updateEmail(User user);
 
   /**
    * パスワードの更新
