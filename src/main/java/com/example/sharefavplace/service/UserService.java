@@ -46,6 +46,10 @@ public class UserService implements UserDetailsService {
     return userRepository.findAll();
   }
 
+  public Optional<User> findById(Integer id) {
+    return userRepository.findById(id);
+  }
+
   /**
    * emailによるユーザー取得
    * 
@@ -78,6 +82,16 @@ public class UserService implements UserDetailsService {
     addRoleToUser(user.getUsername(), "ROLE_USER");
     return saveUser;
   }
+  
+  /**
+   * ユーザーの更新
+   * 
+   * @param user
+   * @return User
+   */
+  public User updateUser(User user) {
+    return userRepository.updateUser(user);
+  }
 
   /**
    * アクティブ済みでないuserレコードの更新（新規登録）
@@ -87,6 +101,16 @@ public class UserService implements UserDetailsService {
    */
   public User updateNonActivatedUser(User user) {
     return userRepository.updateNonActivatedUser(user);
+  }
+
+  /**
+   * ユーザーのメールアドレス更新
+   * 
+   * @param user
+   * @return 更新件数
+   */
+  public int updateEmail(User user) {
+    return userRepository.updateEmail(user);
   }
 
   /**
@@ -110,7 +134,7 @@ public class UserService implements UserDetailsService {
   }
 
   /**
-   * userレコードの削除
+   * ユーザーレコードの削除
    * 
    * @param user
    */

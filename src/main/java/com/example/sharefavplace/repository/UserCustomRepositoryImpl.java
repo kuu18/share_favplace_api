@@ -27,10 +27,36 @@ public class UserCustomRepositoryImpl implements UserCustomRepository {
   private final PasswordEncoder passwordEncoder;
 
   /**
+   * ユーザーの更新
+   * 
+   * @param user
+   * @return User
+   */
+  @Override
+  public User updateUser(User user) {
+    CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+    CriteriaUpdate<User> criteriaUpdate = criteriaBuilder.createCriteriaUpdate(User.class);
+    Root<User> root = criteriaUpdate.from(User.class);
+    criteriaUpdate.set(root.get(User_.username), user.getUsername())
+      .where(root.get(User_.id).in(user.getId()));
+    Query query = this.entityManager.createQuery(criteriaUpdate);
+    int count = query.executeUpdate();
+    if(count == 1) {
+      CriteriaQuery<User> qriteriaQuery = criteriaBuilder.createQuery(User.class);
+      root = qriteriaQuery.from(User.class);
+      qriteriaQuery.select(root)
+            .where(root.get(User_.id).in(user.getId()));
+      TypedQuery<User> typedQuery = this.entityManager.createQuery(qriteriaQuery);
+      return typedQuery.getSingleResult();
+    }
+    throw new RuntimeException("更新に失敗しました。");
+  }
+
+  /**
    * アクティブ済みでないユーザーの更新（新規登録）
    * 
    * @param user
-   * @return 更新済みUser
+   * @return User
    */
   @Override
   public User updateNonActivatedUser(User user) {
@@ -68,6 +94,23 @@ public class UserCustomRepositoryImpl implements UserCustomRepository {
     CriteriaUpdate<User> criteriaUpdate = criteriaBuilder.createCriteriaUpdate(User.class);
     Root<User> root = criteriaUpdate.from(User.class);
     criteriaUpdate.set(root.get(User_.activated), !user.getActivated())
+      .where(root.get(User_.id).in(user.getId()));
+    Query query = this.entityManager.createQuery(criteriaUpdate);
+    return query.executeUpdate();
+  }
+
+  /**
+   * メールアドレスの更新
+   * 
+   * @param user
+   * @return 更新件数
+   */
+  @Override
+  public int updateEmail(User user) {
+    CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+    CriteriaUpdate<User> criteriaUpdate = criteriaBuilder.createCriteriaUpdate(User.class);
+    Root<User> root = criteriaUpdate.from(User.class);
+    criteriaUpdate.set(root.get(User_.email), user.getEmail())
       .where(root.get(User_.id).in(user.getId()));
     Query query = this.entityManager.createQuery(criteriaUpdate);
     return query.executeUpdate();
