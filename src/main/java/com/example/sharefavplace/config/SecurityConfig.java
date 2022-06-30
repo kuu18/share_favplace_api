@@ -1,4 +1,4 @@
-package com.example.sharefavplace.security;
+package com.example.sharefavplace.config;
 
 import com.example.sharefavplace.filter.CustomAuthenticationFilter;
 import com.example.sharefavplace.filter.CustomAuthorizationFilter;

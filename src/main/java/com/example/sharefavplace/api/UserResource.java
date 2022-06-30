@@ -1,6 +1,7 @@
 package com.example.sharefavplace.api;
 
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import com.example.sharefavplace.mapper.UserParamToUserMapper;
 import com.example.sharefavplace.mapper.UserToUserDtoMapper;
 import com.example.sharefavplace.model.User;
 import com.example.sharefavplace.param.UserParam;
+import com.example.sharefavplace.service.FileService;
 import com.example.sharefavplace.service.UserService;
 import com.example.sharefavplace.utils.JWTUtils;
 import com.example.sharefavplace.utils.ResponseUtils;
@@ -31,11 +33,14 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.thymeleaf.context.Context;
 
@@ -53,6 +58,7 @@ public class UserResource {
   private final UserService userService;
   private final EmailSenderService emailSenderService;
   private final PasswordEncoder passwordEncoder;
+  private final FileService fileService;
 
   /**
    * 全ユーザー取得
@@ -294,6 +300,32 @@ public class UserResource {
     responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));
     responseBody.put("message", "パスワードを更新しました。");
     return ResponseEntity.ok().body(responseBody);
+  }
+
+  /**
+   * ユーザープロフィール画像更新
+   * 
+   * @param username
+   * @param avatar
+   * @return
+   */
+  @PostMapping("/{username}/avatar")
+  public ResponseEntity<Map<String, Object>> uploadAvatar(@PathVariable("username") String username, @RequestParam("avatar") MultipartFile avatar) {
+    Map<String, Object> responseBody = new HashMap<>();
+    try {
+      LocalDateTime createAt = LocalDateTime.now();
+      String s3Path = System.getenv("AWSS3_BUCKET_NAME") + "/" + username + "/avatar";
+      String avatarUrl = fileService.fileUpload(avatar, createAt, s3Path).toString();
+      User user = userService.findByUsername(username);
+      user.setAvatarUrl(avatarUrl);
+      userService.updateAvatarUrl(user);
+      responseBody.put("avatar_url", avatarUrl);
+      responseBody.put("message", "プロフィール画像を更新しました。");
+      return ResponseEntity.ok().body(responseBody);
+    } catch(Exception e) {
+      responseBody.put("message", e.getMessage());
+      return ResponseEntity.badRequest().body(responseBody);
+    }
   }
 
   /**

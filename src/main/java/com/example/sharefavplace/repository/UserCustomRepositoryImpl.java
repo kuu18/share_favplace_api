@@ -133,5 +133,21 @@ public class UserCustomRepositoryImpl implements UserCustomRepository {
     Query query = this.entityManager.createQuery(criteriaUpdate);
     return query.executeUpdate();
   }
+
+  /**
+   * アバターの更新
+   * @param user
+   * @return 更新件数
+   */
+  @Override
+  public int updateAvatarUrl(User user) {
+    CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+    CriteriaUpdate<User> criteriaUpdate = criteriaBuilder.createCriteriaUpdate(User.class);
+    Root<User> root = criteriaUpdate.from(User.class);
+    criteriaUpdate.set(root.get(User_.avatarUrl), user.getAvatarUrl())
+      .where(root.get(User_.id).in(user.getId()));
+    Query query = this.entityManager.createQuery(criteriaUpdate);
+    return query.executeUpdate();
+  }
   
 }

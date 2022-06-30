@@ -78,6 +78,8 @@ public class UserService implements UserDetailsService {
    */
   public User saveUser(User user) {
     user.setPassword(passwordEncoder.encode(user.getPassword()));
+    user.setAvatarUrl("https://" + System.getenv("AWSS3_BUCKET_NAME") + ".s3." +
+      System.getenv("AWSS3_REGION") + ".amazonaws.com/default/default_avatar.png");
     User saveUser = userRepository.save(user);
     addRoleToUser(user.getUsername(), "ROLE_USER");
     return saveUser;
@@ -131,6 +133,16 @@ public class UserService implements UserDetailsService {
    */
   public int updateActivated(User user) {
     return userRepository.updateActivated(user);
+  }
+
+  /**
+   * ユーザーのアバター画像更新
+   * 
+   * @param user
+   * @return
+   */
+  public int updateAvatarUrl(User user) {
+    return userRepository.updateAvatarUrl(user);
   }
 
   /**
