@@ -46,5 +46,13 @@ public interface UserCustomRepository {
    * @return 更新件数
    */
   public int updatePassword(User user);
+
+  /**
+   * アバターURLの更新
+   * 
+   * @param user
+   * @return 更新件数
+   */
+  public int updateAvatarUrl(User user);
   
 }
