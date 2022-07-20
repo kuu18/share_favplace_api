@@ -13,5 +13,6 @@ public class ResponseUserDto {
   private String username;
   private String email;
   private Date createdAt;
+  private String avatarUrl;
   private Collection<Role> roles;
 }

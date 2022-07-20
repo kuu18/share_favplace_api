@@ -32,16 +32,8 @@ services:
       args:
         WORKDIR: $WORKDIR
     container_name: share_favplace_api
-    environment:
-      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-      FRONT_URL: "http://localhost:$FRONT_PORT"
-      JWT_SECRET: $JWT_SECRET
-      ENV: $ENV
-      APP_NAME: $APP_NAME
-      EMAIL_HOST: $EMAIL_HOST
-      EMAIL_PORT: $EMAIL_PORT
-      EMAIL_USERNAME: $EMAIL_USERNAME
-      EMAIL_PASSWORD: $EMAIL_PASSWORD
+    env_file:
+      - ./environment/api-variables.env
     tty: true
     command: ./mvnw clean spring-boot:run -Dspring-boot.run.jvmArguments="-Xdebug
             -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:$DEBUG_PORT"

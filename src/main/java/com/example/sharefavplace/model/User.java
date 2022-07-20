@@ -43,6 +43,8 @@ public class User extends AbstractEntity implements UserDetails{
   private String password;
   @Column(name = "activated")
   private Boolean activated;
+  @Column(name = "avatar_url")
+  private String avatarUrl;
   @Column(name = "roles")
   @ManyToMany(fetch = FetchType.EAGER)
   @JoinTable(
