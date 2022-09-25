@@ -9,9 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.example.sharefavplace.dto.ResponseUserDto;
-import com.example.sharefavplace.mapper.UserParamToUserMapper;
-import com.example.sharefavplace.mapper.UserToUserDtoMapper;
+import com.example.sharefavplace.mapper.ToUserMapper;
 import com.example.sharefavplace.model.User;
 import com.example.sharefavplace.param.UserParam;
 import com.example.sharefavplace.service.UserService;
@@ -52,7 +50,8 @@ public class AuthResource {
    * @return トークンの有効期限
    */
   @GetMapping("/token/refresh")
-  public ResponseEntity<Map<String, Object>> refreshToken(HttpServletRequest request, HttpServletResponse response, @CookieValue(name = "refresh_token", required = false)Optional<String> refreshToken) {
+  public ResponseEntity<Map<String, Object>> refreshToken(HttpServletRequest request, HttpServletResponse response,
+      @CookieValue(name = "refresh_token", required = false) Optional<String> refreshToken) {
     if (refreshToken.isPresent()) {
       try {
         // トークンのデコード
@@ -102,13 +101,14 @@ public class AuthResource {
    */
   @GetMapping("account_activations")
   @Transactional
-  public ResponseEntity<Map<String, Object>> accountActivate(@RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorizationHeader,
-  HttpServletRequest request, HttpServletResponse response) {
+  public ResponseEntity<Map<String, Object>> accountActivate(
+      @RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorizationHeader,
+      HttpServletRequest request, HttpServletResponse response) {
     // ヘッダートークンのデコード
     DecodedJWT decodedJWT = JWTUtils.decodeToken(authorizationHeader.substring(JWTUtils.TOKEN_PREFIX.length()));
     String username = decodedJWT.getSubject();
     User user = userService.findByUsername(username);
-    if(!user.getActivated()){
+    if (!user.getActivated()) {
       // ユーザーのactivatedを更新
       userService.updateActivated(user);
       // トークンの生成
@@ -120,7 +120,7 @@ public class AuthResource {
       // クッキーにトークンを保存
       ResponseUtils.setTokensToCookie(accessToken, refreshToken, response);
       // レスポンスの生成
-      ResponseUserDto responseUser = UserToUserDtoMapper.INSTANCE.userToUserDto(user);
+      User responseUser = ToUserMapper.INSTANCE.toResponseUser(user);
       Map<String, Object> responseBody = new HashMap<>();
       responseBody.put("user", responseUser);
       responseBody.put("access_token_exp", accessTokenMap.get("exp"));
@@ -143,20 +143,21 @@ public class AuthResource {
    */
   @PostMapping("account_updateemail")
   @Transactional
-  public ResponseEntity<Map<String, Object>> accountUpdateEmail(@RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorizationHeader,
-  @RequestBody UserParam param,
-  HttpServletRequest request, HttpServletResponse response) {
+  public ResponseEntity<Map<String, Object>> accountUpdateEmail(
+      @RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorizationHeader,
+      @RequestBody UserParam param,
+      HttpServletRequest request, HttpServletResponse response) {
     Map<String, Object> responseBody = new HashMap<>();
     // ヘッダートークンのデコード
     DecodedJWT decodedJWT = JWTUtils.decodeToken(authorizationHeader.substring(JWTUtils.TOKEN_PREFIX.length()));
     String username = decodedJWT.getSubject();
     User user = userService.findByUsername(username);
-    if(user.getEmail().equals(param.getEmail())) {
+    if (user.getEmail().equals(param.getEmail())) {
       responseBody.put("error_message", "このメールアドレスは認証済みです。");
       return ResponseEntity.badRequest().body(responseBody);
     }
     // メールアドレスの更新
-    User updateUser = UserParamToUserMapper.INSTANCE.userParamToUser(param);
+    User updateUser = ToUserMapper.INSTANCE.userParamToUser(param);
     updateUser.setId(user.getId());
     userService.updateEmail(updateUser);
     // トークンの生成
@@ -169,7 +170,7 @@ public class AuthResource {
     ResponseUtils.setTokensToCookie(accessToken, refreshToken, response);
     // レスポンスの生成
     user.setEmail(updateUser.getEmail());
-    ResponseUserDto responseUser = UserToUserDtoMapper.INSTANCE.userToUserDto(user);
+    User responseUser = ToUserMapper.INSTANCE.toResponseUser(user);
     responseBody.put("user", responseUser);
     responseBody.put("access_token_exp", accessTokenMap.get("exp"));
     responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));

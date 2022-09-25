@@ -9,8 +9,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.example.sharefavplace.dto.ResponseUserDto;
-import com.example.sharefavplace.mapper.UserToUserDtoMapper;
+import com.example.sharefavplace.mapper.ToUserMapper;
 import com.example.sharefavplace.model.User;
 import com.example.sharefavplace.param.LoginParam;
 import com.example.sharefavplace.utils.JWTUtils;
@@ -74,7 +73,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
       // クッキーにトークンを保存
       ResponseUtils.setTokensToCookie(accessToken, refreshToken, response);
       // レスポンスの生成
-      ResponseUserDto responseUser = UserToUserDtoMapper.INSTANCE.userToUserDto(user);
+      User responseUser = ToUserMapper.INSTANCE.toResponseUser(user);
       responseBody.put("user", responseUser);
       responseBody.put("access_token_exp", accessTokenMap.get("exp"));
       responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));
