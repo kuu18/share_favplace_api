@@ -19,7 +19,4 @@ public interface ToUserMapper {
   @Mapping(target = "authorities", ignore = true)
   User userParamToUser(UserParam user);
 
-  @Mapping(target = "password", ignore = true)
-  @Mapping(target = "authorities", ignore = true)
-  User toResponseUser(User user);
 }

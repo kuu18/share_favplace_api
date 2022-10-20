@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
+import com.example.sharefavplace.exceptions.ApiRequestException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,21 +23,23 @@ import lombok.RequiredArgsConstructor;
 public class FileService {
   private final AmazonS3 s3Client;
 	
-    /**
-     * AWSs3へファイルをアップロードする処理
-     * 
-     * @param fileUploadParam
-     * @param s3PathName
-     * @return
-     * @throws IOException
-     */
-    public URL fileUpload(MultipartFile multipartFile, LocalDateTime createAt, String s3PathName) throws Exception {
+  /**
+   * AWSs3へファイルをアップロードする処理
+   * 
+   * @param fileUploadParam
+   * @param s3PathName
+   * @return
+   * @throws IOException
+   */
+  public URL fileUpload(MultipartFile multipartFile, LocalDateTime createAt, String s3PathName) {
+    Optional<String> contentType = Optional.ofNullable(multipartFile.getContentType());
+    contentType.orElseThrow(() -> new ApiRequestException("画像ファイルを選択してください。"));
     if (
-      !multipartFile.getContentType().equals("image/jpeg") &&
-      !multipartFile.getContentType().equals("image/jpg") &&
-      !multipartFile.getContentType().equals("image/png")
+      !contentType.get().equals("image/jpeg") &&
+      !contentType.get().equals("image/jpg") &&
+      !contentType.get().equals("image/png")
     ) {
-        throw new Exception("画像ファイルを選択してください。");
+      throw new ApiRequestException("画像ファイルを選択してください。");
     }
     DateTimeFormatter fm = DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss");
 		String extension = FilenameUtils.getExtension(multipartFile.getOriginalFilename()).toLowerCase();

@@ -5,10 +5,10 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
-import com.example.sharefavplace.custom.validation.EmailUnique;
-import com.example.sharefavplace.custom.validation.UsernameUnique;
-
 import org.hibernate.validator.constraints.Length;
+
+import com.example.sharefavplace.validation.EmailUnique;
+import com.example.sharefavplace.validation.UsernameUnique;
 
 import lombok.Data;
 @Data

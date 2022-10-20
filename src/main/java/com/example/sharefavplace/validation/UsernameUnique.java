@@ -1,4 +1,4 @@
-package com.example.sharefavplace.custom.validation;
+package com.example.sharefavplace.validation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -9,14 +9,15 @@ import javax.validation.Constraint;
 import javax.validation.Payload;
 
 /**
- * rolenameが登録済みかのバリデーションアノテーション
+ * usernameが登録済みかのバリデーションアノテーション
  * 
  */
 @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.TYPE_USE})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = {RolenameUniqueValidator.class})
-public @interface RolenameUnique {
-  String message() default "ロールはすでに登録されています。";
+@Constraint(validatedBy = {UsernameUniqueValidator.class})
+public @interface UsernameUnique {
+  String message() default "ユーザー名はすでに登録されています。";
   Class<?>[] groups() default {};
   Class<? extends Payload>[] payload() default {};
 }
+

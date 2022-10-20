@@ -1,31 +1,25 @@
 package com.example.sharefavplace.api;
 
 import java.net.URI;
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.example.sharefavplace.email.EmailSenderService;
-import com.example.sharefavplace.mapper.ToUserMapper;
+import com.example.sharefavplace.exceptions.ApiAuthException;
+import com.example.sharefavplace.exceptions.ApiRequestException;
 import com.example.sharefavplace.model.User;
 import com.example.sharefavplace.param.UserParam;
-import com.example.sharefavplace.service.FileService;
-import com.example.sharefavplace.service.UserService;
+import com.example.sharefavplace.service.EmailSenderServiceImpl;
+import com.example.sharefavplace.service.UserServiceImpl;
 import com.example.sharefavplace.utils.JWTUtils;
 import com.example.sharefavplace.utils.ResponseUtils;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -40,7 +34,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.thymeleaf.context.Context;
 
 import lombok.RequiredArgsConstructor;
 
@@ -53,10 +46,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserResource {
 
-  private final UserService userService;
-  private final EmailSenderService emailSenderService;
-  private final PasswordEncoder passwordEncoder;
-  private final FileService fileService;
+  private final UserServiceImpl userService;
+  private final EmailSenderServiceImpl emailSenderService;
 
   /**
    * 全ユーザー取得
@@ -77,18 +68,13 @@ public class UserResource {
    * @return
    */
   @GetMapping("/current_user")
-  @Transactional
   public ResponseEntity<Map<String, Object>> getCurrentUser(
-      @CookieValue(name = "access_token", required = false) Optional<String> accessToken,
-      HttpServletResponse response,
-      HttpServletRequest request) {
+      @CookieValue(name = "access_token", required = false) Optional<String> accessToken) {
+    if (!accessToken.isPresent()) {
+      throw new ApiAuthException("もう一度ログインしてください。");
+    }
     DecodedJWT decodedJWT = JWTUtils.decodeToken(accessToken.get());
-    String username = decodedJWT.getSubject();
-    User user = userService.findByUsername(username);
-    User responseUser = ToUserMapper.INSTANCE.toResponseUser(user);
-    Map<String, Object> responseBody = new HashMap<>();
-    responseBody.put("user", responseUser);
-    return ResponseEntity.ok().body(responseBody);
+    return ResponseEntity.ok().body(userService.getCurrentUser(decodedJWT));
   }
 
   /**
@@ -99,38 +85,18 @@ public class UserResource {
    * @return 新規登録したユーザー
    */
   @PostMapping("/create")
-  @Transactional
-  public ResponseEntity<Map<String, Object>> saveUser(
+  public ResponseEntity<Map<String, Object>> createUser(
       @RequestBody @Validated(UserParam.CreateGroup.class) UserParam param,
       BindingResult bindingResult,
       HttpServletRequest request, HttpServletResponse response) {
     if (bindingResult.hasErrors()) {
-      List<String> errorMessages = bindingResult.getAllErrors().stream().map(error -> error.getDefaultMessage())
-          .collect(Collectors.toList());
-      Map<String, Object> responseBody = new HashMap<>();
-      responseBody.put("error_messages", errorMessages);
-      return ResponseEntity.badRequest().body(responseBody);
+      return ResponseEntity.badRequest().body(ResponseUtils.validationErrorResponse(bindingResult));
     }
     URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/create").toUriString());
-    User user = new User();
-    user = ToUserMapper.INSTANCE.userParamToUser(param);
-    // メールアドレスまたはユーザーネームがすでに登録されているか判定し、登録する
-    user = userService.checkExistsAndSaveUser(user);
+    User user = userService.createUserAndToken(param);
     // トークンの生成
-    String issure = uri.toString();
-    String token = JWTUtils.createHeaderToken(user, issure);
-    // メール送信
-    Context context = new Context();
-    context.setVariable("appName", System.getenv("APP_NAME"));
-    context.setVariable("tokenLimit", JWTUtils.LIFETIME + "分");
-    context.setVariable("url", System.getenv("FRONT_URL") + "/account/activations?token=" + token);
-    emailSenderService.send(user.getEmail(),
-        "メールアドレスのご確認",
-        "confirmemail",
-        context);
-    Map<String, Object> responseBody = new HashMap<>();
-    responseBody.put("message", "メールを送信しました。" + JWTUtils.LIFETIME + "分以内にメール認証を完了してください");
-    return ResponseEntity.created(uri).body(responseBody);
+    JWTUtils.createLifeTimeToken(user, uri.toString());
+    return ResponseEntity.created(uri).body(emailSenderService.sendAccountActivationMail(user.getEmail()));
   }
 
   /**
@@ -141,41 +107,18 @@ public class UserResource {
    * @return
    */
   @RequestMapping("/update")
-  @Transactional
   public ResponseEntity<Map<String, Object>> updateUser(
       @RequestBody @Validated(UserParam.UpdateDeleteGroup.class) UserParam param,
-      BindingResult bindingResult,
-      HttpServletRequest request, HttpServletResponse response) {
-    Map<String, Object> responseBody = new HashMap<>();
+      BindingResult bindingResult) {
     // バリデーションエラーの場合
     if (bindingResult.hasErrors()) {
-      List<String> errorMessages = bindingResult.getAllErrors().stream().map(error -> error.getDefaultMessage())
-          .collect(Collectors.toList());
-      responseBody.put("error_messages", errorMessages);
-      return ResponseEntity.badRequest().body(responseBody);
+      return ResponseEntity.badRequest().body(ResponseUtils.validationErrorResponse(bindingResult));
     }
-    User updateUser = new User();
-    updateUser = ToUserMapper.INSTANCE.userParamToUser(param);
-    // ユーザーの更新
-    updateUser = userService.updateUser(updateUser);
-    // トークンの生成
-    String issure = request.getRequestURL().toString();
-    Map<String, Object> accessTokenMap = JWTUtils.createAccessToken(updateUser, issure);
-    Map<String, Object> refreshTokenMap = JWTUtils.createRefreshToken(updateUser, issure);
-    String accessToken = accessTokenMap.get("token").toString();
-    String refreshToken = refreshTokenMap.get("token").toString();
-    // クッキーにトークンを保存
-    ResponseUtils.setTokensToCookie(accessToken, refreshToken, response);
-    User responseUser = ToUserMapper.INSTANCE.toResponseUser(updateUser);
-    responseBody.put("user", responseUser);
-    responseBody.put("access_token_exp", accessTokenMap.get("exp"));
-    responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));
-    responseBody.put("message", "ユーザー情報を更新しました。");
-    return ResponseEntity.ok().body(responseBody);
+    return ResponseEntity.ok().body(userService.updateUser(param));
   }
 
   /**
-   * メールアドレス更新メール送信
+   * メールアドレス更新認証メール送信
    * 
    * @param param
    * @param bindingResult
@@ -183,35 +126,19 @@ public class UserResource {
    * @return レスポンス
    */
   @PostMapping("/update/email")
-  @Transactional
   public ResponseEntity<Map<String, Object>> updateEmail(
       @RequestBody @Validated(UserParam.UpdateDeleteGroup.class) UserParam param,
       BindingResult bindingResult,
       HttpServletRequest request) {
-    Map<String, Object> responseBody = new HashMap<>();
     // バリデーションエラーの場合
     if (bindingResult.hasErrors()) {
-      List<String> errorMessages = bindingResult.getAllErrors().stream().map(error -> error.getDefaultMessage())
-          .collect(Collectors.toList());
-      responseBody.put("error_messages", errorMessages);
-      return ResponseEntity.badRequest().body(responseBody);
+      return ResponseEntity.badRequest().body(ResponseUtils.validationErrorResponse(bindingResult));
     }
     Optional<User> user = userService.findById(param.getId());
     // トークンの生成
-    String issure = request.getRequestURL().toString();
-    String token = JWTUtils.createHeaderToken(user.get(), issure);
-    // メール送信
-    Context context = new Context();
-    context.setVariable("appName", System.getenv("APP_NAME"));
-    context.setVariable("tokenLimit", JWTUtils.LIFETIME + "分");
-    context.setVariable("url",
-        System.getenv("FRONT_URL") + "/account/activations?token=" + token + "&email=" + param.getEmail());
-    emailSenderService.send(param.getEmail(),
-        "メールアドレスのご確認",
-        "updateemail",
-        context);
-    responseBody.put("message", "新しいメールアドレスにメールを送信しました。" + JWTUtils.LIFETIME + "分以内にメール認証を完了してください");
-    return ResponseEntity.ok().body(responseBody);
+    JWTUtils.createLifeTimeToken(user.get(), request.getRequestURL().toString());
+    // メールアドレス更新認証メール送信
+    return ResponseEntity.ok().body(emailSenderService.sendUpdateEmailMail(param.getEmail()));
   }
 
   /**
@@ -220,19 +147,8 @@ public class UserResource {
    * @param param
    */
   @PostMapping("/update/password")
-  @Transactional
-  public ResponseEntity<Map<String, String>> updatePassword(@RequestBody UserParam param) {
-    User user = userService.findByEmail(param.getEmail());
-    if (passwordEncoder.matches(param.getPassword(), user.getPassword())) {
-      user.setPassword(param.getNewPassword());
-      userService.updatePassword(user);
-      Map<String, String> responseBody = new HashMap<>();
-      responseBody.put("message", "パスワードを更新しました。");
-      return ResponseEntity.ok().body(responseBody);
-    }
-    Map<String, String> responseBody = new HashMap<>();
-    responseBody.put("error_message", "パスワードが違います。");
-    return ResponseEntity.badRequest().body(responseBody);
+  public ResponseEntity<Map<String, Object>> updatePassword(@RequestBody UserParam param) {
+      return ResponseEntity.ok().body(userService.updatePassword(param));
   }
 
   /**
@@ -242,29 +158,16 @@ public class UserResource {
    * @param request
    */
   @PostMapping("/password/forget")
-  public ResponseEntity<Map<String, String>> sendEmailResetPassword(@RequestBody UserParam param,
+  public ResponseEntity<Map<String, Object>> sendEmailResetPassword(@RequestBody UserParam param,
       HttpServletRequest request) {
     String email = param.getEmail();
-    Optional<User> user = Optional.ofNullable(userService.findByEmail(email));
-    if (user.isPresent()) {
-      String issure = request.getRequestURL().toString();
-      String token = JWTUtils.createHeaderToken(user.get(), issure);
-      // メール送信
-      Context context = new Context();
-      context.setVariable("appName", System.getenv("APP_NAME"));
-      context.setVariable("tokenLimit", JWTUtils.LIFETIME + "分");
-      context.setVariable("url", System.getenv("FRONT_URL") + "/password/reset?token=" + token);
-      emailSenderService.send(user.get().getEmail(),
-          "パスワード再設定のお知らせ",
-          "passwordreset",
-          context);
-      Map<String, String> responseBody = new HashMap<>();
-      responseBody.put("message", "メールを送信しました。" + JWTUtils.LIFETIME + "分以内にパスワード再設定を行なってください。");
-      return ResponseEntity.ok().body(responseBody);
+    User user = userService.findByEmail(email);
+    if (user == null) {
+      throw new ApiRequestException("アカウントが見つかりません。");
     }
-    Map<String, String> responseBody = new HashMap<>();
-    responseBody.put("error_message", "メールアドレスが登録されていません。");
-    return ResponseEntity.badRequest().body(responseBody);
+    // トークンの生成
+    JWTUtils.createLifeTimeToken(user, request.getRequestURL().toString());
+    return ResponseEntity.ok().body(emailSenderService.sendResetPasswordMail(email));
   }
 
   /**
@@ -275,35 +178,15 @@ public class UserResource {
    * @return
    */
   @PostMapping("/password/reset")
-  @Transactional
   public ResponseEntity<Map<String, Object>> passwordReset(@RequestBody UserParam param,
       @RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorizationHeader,
       HttpServletRequest request, HttpServletResponse response) {
-    DecodedJWT decodedJWT = JWTUtils.decodeToken(authorizationHeader.substring(JWTUtils.TOKEN_PREFIX.length()));
-    String username = decodedJWT.getSubject();
-    User user = userService.findByUsername(username);
-    user.setPassword(param.getPassword());
-    userService.updatePassword(user);
-    // トークンの生成
-    String issure = request.getRequestURL().toString();
-    Map<String, Object> accessTokenMap = JWTUtils.createAccessToken(user, issure);
-    Map<String, Object> refreshTokenMap = JWTUtils.createRefreshToken(user, issure);
-    String accessToken = accessTokenMap.get("token").toString();
-    String refreshToken = refreshTokenMap.get("token").toString();
-    // クッキーにトークンを保存
-    ResponseUtils.setTokensToCookie(accessToken, refreshToken, response);
-    // レスポンスの生成
-    User responseUser = ToUserMapper.INSTANCE.toResponseUser(user);
-    Map<String, Object> responseBody = new HashMap<>();
-    responseBody.put("user", responseUser);
-    responseBody.put("access_token_exp", accessTokenMap.get("exp"));
-    responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));
-    responseBody.put("message", "パスワードを更新しました。");
-    return ResponseEntity.ok().body(responseBody);
+      DecodedJWT decodedJWT = JWTUtils.decodeToken(authorizationHeader.substring(JWTUtils.TOKEN_PREFIX.length()));
+    return ResponseEntity.ok().body(userService.resetPassword(decodedJWT, param, request.getRequestURL().toString(), response));
   }
 
   /**
-   * ユーザープロフィール画像更新
+   * ユーザーアバター画像更新
    * 
    * @param username
    * @param avatar
@@ -312,21 +195,7 @@ public class UserResource {
   @PostMapping("/{username}/avatar")
   public ResponseEntity<Map<String, Object>> uploadAvatar(@PathVariable("username") String username,
       @RequestParam("avatar") MultipartFile avatar) {
-    Map<String, Object> responseBody = new HashMap<>();
-    try {
-      LocalDateTime createAt = LocalDateTime.now();
-      String s3Path = System.getenv("AWSS3_BUCKET_NAME") + "/" + username + "/avatar";
-      String avatarUrl = fileService.fileUpload(avatar, createAt, s3Path).toString();
-      User user = userService.findByUsername(username);
-      user.setAvatarUrl(avatarUrl);
-      userService.updateAvatarUrl(user);
-      responseBody.put("avatar_url", avatarUrl);
-      responseBody.put("message", "プロフィール画像を更新しました。");
-      return ResponseEntity.ok().body(responseBody);
-    } catch (Exception e) {
-      responseBody.put("message", e.getMessage());
-      return ResponseEntity.badRequest().body(responseBody);
-    }
+      return ResponseEntity.badRequest().body(userService.updateAvatar(username, avatar));
   }
 
   /**
@@ -339,20 +208,9 @@ public class UserResource {
   @DeleteMapping("/delete")
   public ResponseEntity<Map<String, Object>> deletUser(@RequestBody @Validated UserParam param,
       BindingResult bindingResult) {
-    Map<String, Object> responseBody = new HashMap<>();
     if (bindingResult.hasErrors()) {
-      List<String> errorMessages = bindingResult.getAllErrors().stream().map(error -> error.getDefaultMessage())
-          .collect(Collectors.toList());
-      responseBody.put("error_messages", errorMessages);
-      return ResponseEntity.badRequest().body(responseBody);
+      return ResponseEntity.badRequest().body(ResponseUtils.validationErrorResponse(bindingResult));
     }
-    Optional<User> user = userService.findById(param.getId());
-    if (passwordEncoder.matches(param.getPassword(), user.get().getPassword())) {
-      userService.deleteUser(user.get());
-      responseBody.put("message", "アカウントを削除しました。");
-      return ResponseEntity.ok().body(responseBody);
-    }
-    responseBody.put("error_message", "パスワードが違います。");
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseBody);
+    return ResponseEntity.ok().body(userService.deleteUser(param));
   }
 }

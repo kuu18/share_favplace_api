@@ -2,9 +2,9 @@ package com.example.sharefavplace.param;
 
 import javax.validation.constraints.NotBlank;
 
-import com.example.sharefavplace.custom.validation.RolenameUnique;
-
 import org.hibernate.validator.constraints.Length;
+
+import com.example.sharefavplace.validation.RolenameUnique;
 
 import lombok.Data;
 

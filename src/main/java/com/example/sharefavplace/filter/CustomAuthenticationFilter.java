@@ -9,7 +9,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.example.sharefavplace.mapper.ToUserMapper;
 import com.example.sharefavplace.model.User;
 import com.example.sharefavplace.param.LoginParam;
 import com.example.sharefavplace.utils.JWTUtils;
@@ -62,21 +61,20 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
     // メールアドレス認証済みでない場合
     if(!user.getActivated()){
       response.setStatus(HttpStatus.UNAUTHORIZED.value());
-      responseBody.put("error_message", "メールアドレスを認証してください");
+      responseBody.put("message", "メールアドレスを認証してください");
     } else {
       String requestUrl = request.getRequestURL().toString();
       // トークンの生成
-      Map<String, Object> accessTokenMap = JWTUtils.createAccessToken(user, requestUrl);
-      Map<String, Object> refreshTokenMap = JWTUtils.createRefreshToken(user, requestUrl);
-      String accessToken = accessTokenMap.get("token").toString();
-      String refreshToken = refreshTokenMap.get("token").toString();
+      JWTUtils.createAccessToken(user, requestUrl);
+      JWTUtils.createRefreshToken(user, requestUrl);
       // クッキーにトークンを保存
-      ResponseUtils.setTokensToCookie(accessToken, refreshToken, response);
+      ResponseUtils.setTokensToCookie(JWTUtils.accessToken, JWTUtils.refreshToken, response);
       // レスポンスの生成
-      User responseUser = ToUserMapper.INSTANCE.toResponseUser(user);
-      responseBody.put("user", responseUser);
-      responseBody.put("access_token_exp", accessTokenMap.get("exp"));
-      responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));
+      responseBody.put("user", user);
+      responseBody.put("access_token_exp", JWTUtils.accessTokenExp);
+      responseBody.put("refresh_token_exp", JWTUtils.refreshTokenExp);
+      // トークン削除
+      JWTUtils.deleteToken();
     }
     ResponseUtils.jsonResponse(responseBody, response);
   }
@@ -91,7 +89,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
     String message = "ユーザー名またはパスワードが違います";
     response.setStatus(HttpStatus.UNAUTHORIZED.value());
     Map<String, String> responseBody = new HashMap<>();
-    responseBody.put("error_message", message);
+    responseBody.put("message", message);
     ResponseUtils.jsonResponse(responseBody, response);
   }
 }

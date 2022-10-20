@@ -1,22 +1,11 @@
 package com.example.sharefavplace.service;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 
-import com.example.sharefavplace.model.Category;
 import com.example.sharefavplace.model.Favplace;
-import com.example.sharefavplace.repository.CategoryRepository;
-import com.example.sharefavplace.repository.FavplaceRepository;
-
-import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
-public class FavplaceService {
-
-  private final FavplaceRepository favplaceRepository;
-  private final CategoryRepository categoryRepository;
+public interface FavplaceService {
 
   /**
    * Favplaces新規登録
@@ -24,9 +13,7 @@ public class FavplaceService {
    * @param favplace
    * @return Favplace
    */
-  public Favplace saveFavplace(Favplace favplace) {
-    return favplaceRepository.save(favplace);
-  }
+  public Favplace saveFavplace(Favplace favplace);
 
   /**
    * favplaceにcategoryを追加するメソッド
@@ -34,11 +21,6 @@ public class FavplaceService {
    * @param favplaceId
    * @param categoryId
    */
-  public Favplace addCategoryToFavplaces(Integer favplaceId, Iterable<Integer> categoryIds) {
-    Favplace favplace = favplaceRepository.findById(favplaceId).get();
-    Iterable<Integer> iterableCategoryIds = categoryIds;
-    List<Category> categories = categoryRepository.findAllById(iterableCategoryIds);
-    categories.stream().forEach(category -> favplace.getCategories().add(category));
-    return favplace;
-  }
+  public Favplace addCategoryToFavplaces(Integer favplaceId, Iterable<Integer> categoryIds);
+
 }

@@ -1,25 +1,20 @@
 package com.example.sharefavplace.api;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.example.sharefavplace.mapper.ToUserMapper;
-import com.example.sharefavplace.model.User;
+import com.example.sharefavplace.exceptions.ApiAuthException;
 import com.example.sharefavplace.param.UserParam;
-import com.example.sharefavplace.service.UserService;
+import com.example.sharefavplace.service.AuthService;
 import com.example.sharefavplace.utils.JWTUtils;
 import com.example.sharefavplace.utils.ResponseUtils;
 
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,7 +34,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class AuthResource {
-  private final UserService userService;
+  private final AuthService authService;
 
   /**
    * リフレッシュトークンによるアクセストークンの再生成
@@ -52,30 +47,13 @@ public class AuthResource {
   @GetMapping("/token/refresh")
   public ResponseEntity<Map<String, Object>> refreshToken(HttpServletRequest request, HttpServletResponse response,
       @CookieValue(name = "refresh_token", required = false) Optional<String> refreshToken) {
-    if (refreshToken.isPresent()) {
-      try {
-        // トークンのデコード
-        DecodedJWT decodedJWT = JWTUtils.decodeToken(refreshToken.get());
-        String username = decodedJWT.getSubject();
-        User user = userService.findByUsername(username);
-        String issure = request.getRequestURL().toString();
-        // アクセストークンの再生成
-        Map<String, Object> accessTokenMap = JWTUtils.createAccessToken(user, issure);
-        String accessToken = accessTokenMap.get("token").toString();
-        // トークンをcookieに保存
-        ResponseUtils.setTokensToCookie(accessToken, refreshToken.get(), response);
-        // レスポンスの生成
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("access_token_exp", accessTokenMap.get("exp"));
-        responseBody.put("refresh_token_exp", decodedJWT.getExpiresAt().getTime());
-        return ResponseEntity.ok().body(responseBody);
-      } catch (JWTVerificationException e) {
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
-        throw new RuntimeException(e.getMessage());
-      }
+    if (!refreshToken.isPresent()) {
+      throw new ApiAuthException("リフレッシュトークンがありません。");
     }
-    response.setStatus(HttpStatus.UNAUTHORIZED.value());
-    throw new RuntimeException("リフレッシュトークンがありません。");
+    // トークンのデコード
+    DecodedJWT decodedJWT = JWTUtils.decodeToken(refreshToken.get());
+    JWTUtils.refreshToken = refreshToken.get();
+    return ResponseEntity.ok().body(authService.tokenRefresh(decodedJWT, request.getRequestURL().toString(), response));
   }
 
   /**
@@ -100,37 +78,13 @@ public class AuthResource {
    * @return
    */
   @GetMapping("account_activations")
-  @Transactional
   public ResponseEntity<Map<String, Object>> accountActivate(
       @RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorizationHeader,
       HttpServletRequest request, HttpServletResponse response) {
     // ヘッダートークンのデコード
     DecodedJWT decodedJWT = JWTUtils.decodeToken(authorizationHeader.substring(JWTUtils.TOKEN_PREFIX.length()));
-    String username = decodedJWT.getSubject();
-    User user = userService.findByUsername(username);
-    if (!user.getActivated()) {
-      // ユーザーのactivatedを更新
-      userService.updateActivated(user);
-      // トークンの生成
-      String issure = request.getRequestURL().toString();
-      Map<String, Object> accessTokenMap = JWTUtils.createAccessToken(user, issure);
-      Map<String, Object> refreshTokenMap = JWTUtils.createRefreshToken(user, issure);
-      String accessToken = accessTokenMap.get("token").toString();
-      String refreshToken = refreshTokenMap.get("token").toString();
-      // クッキーにトークンを保存
-      ResponseUtils.setTokensToCookie(accessToken, refreshToken, response);
-      // レスポンスの生成
-      User responseUser = ToUserMapper.INSTANCE.toResponseUser(user);
-      Map<String, Object> responseBody = new HashMap<>();
-      responseBody.put("user", responseUser);
-      responseBody.put("access_token_exp", accessTokenMap.get("exp"));
-      responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));
-      responseBody.put("message", "Welcom To ShareFavplace!!");
-      return ResponseEntity.ok().body(responseBody);
-    }
-    Map<String, Object> error = new HashMap<>();
-    error.put("error_message", "このメールアドレスは認証済みです。");
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    String issure = request.getRequestURL().toString();
+    return ResponseEntity.ok().body(authService.accountActivate(decodedJWT, issure, response));
   }
 
   /**
@@ -142,39 +96,14 @@ public class AuthResource {
    * @return
    */
   @PostMapping("account_updateemail")
-  @Transactional
   public ResponseEntity<Map<String, Object>> accountUpdateEmail(
       @RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorizationHeader,
       @RequestBody UserParam param,
       HttpServletRequest request, HttpServletResponse response) {
-    Map<String, Object> responseBody = new HashMap<>();
     // ヘッダートークンのデコード
     DecodedJWT decodedJWT = JWTUtils.decodeToken(authorizationHeader.substring(JWTUtils.TOKEN_PREFIX.length()));
-    String username = decodedJWT.getSubject();
-    User user = userService.findByUsername(username);
-    if (user.getEmail().equals(param.getEmail())) {
-      responseBody.put("error_message", "このメールアドレスは認証済みです。");
-      return ResponseEntity.badRequest().body(responseBody);
-    }
-    // メールアドレスの更新
-    User updateUser = ToUserMapper.INSTANCE.userParamToUser(param);
-    updateUser.setId(user.getId());
-    userService.updateEmail(updateUser);
-    // トークンの生成
     String issure = request.getRequestURL().toString();
-    Map<String, Object> accessTokenMap = JWTUtils.createAccessToken(user, issure);
-    Map<String, Object> refreshTokenMap = JWTUtils.createRefreshToken(user, issure);
-    String accessToken = accessTokenMap.get("token").toString();
-    String refreshToken = refreshTokenMap.get("token").toString();
-    // クッキーにトークンを保存
-    ResponseUtils.setTokensToCookie(accessToken, refreshToken, response);
-    // レスポンスの生成
-    user.setEmail(updateUser.getEmail());
-    User responseUser = ToUserMapper.INSTANCE.toResponseUser(user);
-    responseBody.put("user", responseUser);
-    responseBody.put("access_token_exp", accessTokenMap.get("exp"));
-    responseBody.put("refresh_token_exp", refreshTokenMap.get("exp"));
-    responseBody.put("message", "メールアドレスを更新しました。");
-    return ResponseEntity.ok().body(responseBody);
+    return ResponseEntity.ok().body(authService.updateEmail(decodedJWT, param, issure, response));
   }
+
 }
