@@ -15,12 +15,10 @@ import com.example.sharefavplace.model.User;
 import com.example.sharefavplace.model.User_;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-@Transactional
 public class UserCustomRepositoryImpl implements UserCustomRepository {
 
   private final EntityManager entityManager;

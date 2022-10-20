@@ -3,8 +3,9 @@ package com.example.sharefavplace.api;
 import java.net.URI;
 import java.util.Map;
 
-import com.example.sharefavplace.logic.FavplaceLogic;
 import com.example.sharefavplace.param.FavplaceParam;
+import com.example.sharefavplace.service.FavplaceServiceImpl;
+import com.example.sharefavplace.utils.ResponseUtils;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -23,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class FavplaceResource {
 
-  private final FavplaceLogic favplaceLogic;
+  private final FavplaceServiceImpl favplaceService;
   
   /**
    * Favplace新規登録
@@ -36,9 +37,9 @@ public class FavplaceResource {
   public ResponseEntity<Map<String, Object>> saveFavplace(@RequestPart("image") MultipartFile image, @RequestPart("params") @Validated FavplaceParam params,
   BindingResult bindingResult) {
     if (bindingResult.hasErrors()) {
-      // TODO
+      return ResponseEntity.badRequest().body(ResponseUtils.validationErrorResponse(bindingResult));
     }
     URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/favplaces/create").toUriString());
-    return ResponseEntity.created(uri).body(favplaceLogic.saveFavplace(image, params));
+    return ResponseEntity.created(uri).body(favplaceService.saveFavplace(image, params));
   }
 }

@@ -1,4 +1,4 @@
-package com.example.sharefavplace.custom.validation;
+package com.example.sharefavplace.validation;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;

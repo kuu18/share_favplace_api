@@ -5,22 +5,15 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.example.sharefavplace.model.Category;
-import com.example.sharefavplace.repository.CategoryRepository;
-
-import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor
-public class CategoryService {
-
-  private final CategoryRepository categoryRepository; 
+public interface CategoryService {
 
   /**
    * 全カテゴリー取得
    * 
    * @return 全カテゴリー
    */
-  public List<Category> findAllCategory() {
-    return categoryRepository.findAll();
-  }
+  public List<Category> findAllCategory();
+
 }

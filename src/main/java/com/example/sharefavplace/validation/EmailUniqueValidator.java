@@ -1,4 +1,4 @@
-package com.example.sharefavplace.custom.validation;
+package com.example.sharefavplace.validation;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -15,18 +15,18 @@ import com.example.sharefavplace.utils.JWTUtils;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class UsernameUniqueValidator implements ConstraintValidator<UsernameUnique, String> {
+public class EmailUniqueValidator implements ConstraintValidator<EmailUnique, String> {
   private final UserService userService;
 
   /**
-   * ユーザー名が登録済みかつユーザーがactivatedがtrueの場合バリデーションエラー
+   * emailが登録済みかつユーザーがアクティブ済みの場合バリデーションエラー
    * ユーザーが新規登録後アクティブ化するまでの（30分）はactivatedがfalseでも重複を許さない
    * 
    * @return 判定結果
    */
   @Override
   public boolean isValid(String value, ConstraintValidatorContext context) {
-    Optional<User> user = Optional.ofNullable(userService.findByUsername(value));
+    Optional<User> user = Optional.ofNullable(userService.findByEmail(value));
     if (!user.isPresent()) {
       return true;
     }
@@ -39,4 +39,5 @@ public class UsernameUniqueValidator implements ConstraintValidator<UsernameUniq
     }
     return true;
   }
+
 }

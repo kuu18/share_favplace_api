@@ -18,10 +18,13 @@ import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import lombok.AllArgsConstructor;
@@ -47,8 +50,10 @@ public class User extends AbstractEntity implements UserDetails{
   @Column(name = "email")
   private String email;
   @Column(name = "password")
+  @JsonIgnore
   private String password;
   @Column(name = "activated")
+  @JsonIgnore
   private Boolean activated;
   @Column(name = "avatar_url")
   private String avatarUrl;
@@ -60,30 +65,36 @@ public class User extends AbstractEntity implements UserDetails{
     inverseJoinColumns = @JoinColumn(name="role_id", referencedColumnName="id")
   )
   private List<Role> roles = new ArrayList<>();
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+  @Fetch(FetchMode.SUBSELECT)
   private List<Favplace> favplaces = new ArrayList<>();
 
   @Override
+  @JsonIgnore
   public Collection<? extends GrantedAuthority> getAuthorities() {
     return this.roles;
   }
 
   @Override
+  @JsonIgnore
   public boolean isAccountNonExpired() {
     return true;
   }
 
   @Override
+  @JsonIgnore
   public boolean isAccountNonLocked() {
     return true;
   }
 
   @Override
+  @JsonIgnore
   public boolean isCredentialsNonExpired() {
     return true;
   }
 
   @Override
+  @JsonIgnore
   public boolean isEnabled() {
     return true;
   }

@@ -1,7 +1,7 @@
-package com.example.sharefavplace.email;
+package com.example.sharefavplace.service;
 
 import org.thymeleaf.context.Context;
 
-public interface EmailSender {
+public interface EmailSenderService {
   public void send(String to, String subject, String bodyTemplateName, Context context);
 }

@@ -2,6 +2,10 @@ package com.example.sharefavplace.utils;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -13,6 +17,7 @@ import org.springframework.boot.web.server.Cookie.SameSite;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseCookie.ResponseCookieBuilder;
+import org.springframework.validation.BindingResult;
 
 
 /**
@@ -100,4 +105,19 @@ public class ResponseUtils {
       }
     );
   }
+
+  /**
+   * バリデーションエラー時のレスポンス
+   * 
+   * @param bindingResult
+   * @return responseBody
+   */
+  public static Map<String, Object> validationErrorResponse(BindingResult bindingResult) {
+    Map<String, Object> responseBody = new HashMap<>();
+    List<String> errorMessages = bindingResult.getAllErrors().stream().map(error -> error.getDefaultMessage())
+          .collect(Collectors.toList());
+    responseBody.put("messages", errorMessages);
+    return responseBody;
+  }
+
 }
