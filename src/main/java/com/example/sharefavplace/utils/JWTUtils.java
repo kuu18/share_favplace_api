@@ -36,7 +36,7 @@ public class JWTUtils {
    * @return アクセストークン
    */
   public static void createAccessToken(User user, String issure) {
-    Date expiresAt = new Date(System.currentTimeMillis() + 1 * 60 * 1000);
+    Date expiresAt = new Date(System.currentTimeMillis() + 60 * 60 * 1000);
     accessToken = JWT.create()
         // トークンの識別子の設定
         .withSubject(user.getUsername())

@@ -10,12 +10,14 @@ import javax.persistence.PreUpdate;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 /**
  * DB共通Entity
  */
 
-@Data
+@Getter
+@Setter
 @MappedSuperclass
 public abstract class AbstractEntity {
   /** 登録日時 */

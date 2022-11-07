@@ -1,6 +1,7 @@
 package com.example.sharefavplace.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -18,27 +19,22 @@ import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Data
-@EqualsAndHashCode(callSuper=false)
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "users")
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class User extends AbstractEntity implements UserDetails{
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_id_seq")
   @SequenceGenerator(name = "user_id_seq", sequenceName = "user_id_seq", allocationSize = 1)
@@ -65,8 +61,8 @@ public class User extends AbstractEntity implements UserDetails{
     inverseJoinColumns = @JoinColumn(name="role_id", referencedColumnName="id")
   )
   private List<Role> roles = new ArrayList<>();
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-  @Fetch(FetchMode.SUBSELECT)
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  @JsonIgnore
   private List<Favplace> favplaces = new ArrayList<>();
 
   @Override
@@ -97,5 +93,18 @@ public class User extends AbstractEntity implements UserDetails{
   @JsonIgnore
   public boolean isEnabled() {
     return true;
+  }
+
+  public List<String> getKeys() {
+    return new ArrayList<>(
+      Arrays.asList(
+        "id", 
+        "username",
+        "email",
+        "password",
+        "avatarUrl",
+        "roles"
+      )
+    );
   }
 }

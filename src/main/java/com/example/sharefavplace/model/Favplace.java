@@ -2,6 +2,7 @@ package com.example.sharefavplace.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -15,22 +16,19 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import javax.persistence.Transient;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Data
-@EqualsAndHashCode(callSuper=false)
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "favplaces")
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Favplace extends AbstractEntity {
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "favplace_id_seq")
   @SequenceGenerator(name = "favplace_id_seq", sequenceName = "favplace_id_seq", allocationSize = 1)
@@ -45,7 +43,7 @@ public class Favplace extends AbstractEntity {
   private String municipality;
   @Column(name = "address")
   private String address;
-  @ManyToMany(fetch = FetchType.EAGER)
+  @ManyToMany
   @JoinTable(
     name="favplaces_categories",
     joinColumns = @JoinColumn(name="favplace_id", referencedColumnName="id"),
@@ -60,4 +58,13 @@ public class Favplace extends AbstractEntity {
   private String remarks;
   @ManyToOne(fetch = FetchType.LAZY)
   private User user;
+
+  @Transient
+  private String categoryName;
+
+  public String getCategoryName() {
+    if(getCategories().isEmpty()) return categoryName;
+    return getCategories().stream().map(category -> category.getCategoryname())
+      .collect(Collectors.joining("、"));
+  }
 }

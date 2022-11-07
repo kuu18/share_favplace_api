@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.transaction.Transactional;
 
@@ -31,6 +32,27 @@ public class FavplaceServiceImpl implements FavplaceService {
   private final FileService fileService;
   private Map<String, Object> responseBody = new HashMap<>();
 
+  /**
+   * idによるFavplace取得
+   * 
+   * @param id
+   * @return Favplace
+   */
+  @Override
+  public Favplace getFavplaceById(Integer id) {
+    return favplaceRepository.selectFavplacebyId(id);
+  }
+
+  /**
+   * user_idによるFavplaces取得
+   * 
+   * @param userId
+   * @return List<Favplace>
+   */
+  @Override
+  public List<Favplace> getFavplacesByUserId(Integer userId) {
+    return favplaceRepository.selectAllFavplacesbyUserId(userId);
+  }
 
   /**
    * Favplaces新規登録
@@ -79,13 +101,13 @@ public class FavplaceServiceImpl implements FavplaceService {
    * @param image
    * @return responseBody
    */
-  public Map<String, Object> saveFavplace(MultipartFile image, FavplaceParam params) {
+  public Map<String, Object> saveFavplace(Optional<MultipartFile> image, FavplaceParam params) {
     User user = userService.findById(params.getUserId()).get();
     Favplace favplace = new Favplace();
     favplace = ToFavplaceMapper.INSTANCE.favplaceParamToFavplace(params);
     favplace.setUser(user);
-    if (image.getSize() != 0) {
-      String imageUrl = uploadImage(image, user.getUsername());
+    if (image.isPresent() && image.get().getSize() != 0) {
+      String imageUrl = uploadImage(image.get(), user.getUsername());
       favplace.setImageUrl(imageUrl);
     }
     Favplace savedFavplace = saveFavplace(favplace);
