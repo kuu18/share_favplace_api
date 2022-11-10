@@ -10,20 +10,20 @@ import com.example.sharefavplace.model.Favplace;
 public interface FavplaceService {
 
   /**
-   * idによるFavplace取得
-   * 
-   * @param id
-   * @return Favplace
-   */
-  public Favplace getFavplaceById(Integer id);
-
-  /**
-   * user_idによるFavplaces取得
+   * user_idによるFavplaces取得（ページネーション）
    * 
    * @param userId
    * @return List<Favplace>
    */
-  public List<Favplace> getFavplacesByUserId(Integer userId);
+  public List<Favplace> getFavplacesByUserId(Integer userId, final int pPageIndex, final int pCountPerPage);
+
+  /**
+   * user_idによるFavplace数取得
+   * 
+   * @param userId
+   * @return Favplace数
+   */
+  public Long getUsersFavplacesCount(Integer userId);
 
   /**
    * Favplaces新規登録

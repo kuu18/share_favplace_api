@@ -1,7 +1,6 @@
 package com.example.sharefavplace.model;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -95,16 +94,4 @@ public class User extends AbstractEntity implements UserDetails{
     return true;
   }
 
-  public List<String> getKeys() {
-    return new ArrayList<>(
-      Arrays.asList(
-        "id", 
-        "username",
-        "email",
-        "password",
-        "avatarUrl",
-        "roles"
-      )
-    );
-  }
 }

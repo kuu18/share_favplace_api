@@ -1,11 +1,9 @@
 package com.example.sharefavplace.api;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.example.sharefavplace.model.Favplace;
 import com.example.sharefavplace.param.FavplaceParam;
 import com.example.sharefavplace.service.FavplaceServiceImpl;
 import com.example.sharefavplace.utils.ResponseUtils;
@@ -31,16 +29,11 @@ public class FavplaceResource {
 
   private final FavplaceServiceImpl favplaceService;
 
-  @GetMapping("/user/{id}")
-  public ResponseEntity<List<Favplace>> getFavplacesByUserId(@PathVariable Integer id) {
-    return ResponseEntity.ok().body(favplaceService.getFavplacesByUserId(id));
+  @GetMapping("/user/{id}/{pageIndex}")
+  public ResponseEntity<Map<String, Object>> getFavplacesByUserId(@PathVariable Integer id, @PathVariable Integer pageIndex) {
+    return ResponseEntity.ok().body(favplaceService.getFavplacesByUserId(id, pageIndex));
   }
 
-  @GetMapping("/{id}")
-  public ResponseEntity<Favplace> getFavplacesByFavplaceId(@PathVariable Integer id) {
-    return ResponseEntity.ok().body(favplaceService.getFavplaceById(id));
-  }
-  
   /**
    * Favplace新規登録
    * 

@@ -33,25 +33,25 @@ public class FavplaceServiceImpl implements FavplaceService {
   private Map<String, Object> responseBody = new HashMap<>();
 
   /**
-   * idによるFavplace取得
-   * 
-   * @param id
-   * @return Favplace
-   */
-  @Override
-  public Favplace getFavplaceById(Integer id) {
-    return favplaceRepository.selectFavplacebyId(id);
-  }
-
-  /**
    * user_idによるFavplaces取得
    * 
    * @param userId
    * @return List<Favplace>
    */
   @Override
-  public List<Favplace> getFavplacesByUserId(Integer userId) {
-    return favplaceRepository.selectAllFavplacesbyUserId(userId);
+  public List<Favplace> getFavplacesByUserId(Integer userId, final int pPageIndex, final int pCountPerPage) {
+    return favplaceRepository.selectFavplacesbyUserId(userId, pPageIndex, pCountPerPage);
+  }
+
+  /**
+   * user_idによるFavplace数取得
+   * 
+   * @param userId
+   * @return Favplace数
+   */
+  @Override
+  public Long getUsersFavplacesCount(Integer userId) {
+    return favplaceRepository.getUsersFavplacesCount(userId);
   }
 
   /**
@@ -114,6 +114,12 @@ public class FavplaceServiceImpl implements FavplaceService {
     savedFavplace = addCategoryToFavplaces(savedFavplace.getId(), params.getCategoryIds());
     responseBody.put("message", "favplaceを登録しました。");
     responseBody.put("favplace", savedFavplace);
+    return responseBody;
+  }
+
+  public Map<String, Object> getFavplacesByUserId(Integer userId, Integer pPageIndex) {
+    responseBody.put("favplaces", getFavplacesByUserId(userId, pPageIndex, 12));
+    responseBody.put("count", getUsersFavplacesCount(userId));
     return responseBody;
   }
 

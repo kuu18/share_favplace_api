@@ -7,18 +7,18 @@ import com.example.sharefavplace.model.Favplace;
 public interface FavplaceCustomRepository {
 
   /**
-   * idによるFavplace取得
-   * 
-   * @param id
-   * @return Favplace
-   */
-  public Favplace selectFavplacebyId(Integer id);
-
-  /**
-   * user_idによるFavplace全件取得
+   * user_idによるFavplaces取得（ページネーション）
    * 
    * @param userId
    * @return List<Favplace>
    */
-  public List<Favplace> selectAllFavplacesbyUserId(Integer userId);
+  public List<Favplace> selectFavplacesbyUserId(Integer userId, final int pPageIndex, final int pCountPerPage);
+
+  /**
+   * user_idによるFavplace数取得
+   * 
+   * @param userId
+   * @return Favplace数
+   */
+  public long getUsersFavplacesCount(Integer userId);
 }
