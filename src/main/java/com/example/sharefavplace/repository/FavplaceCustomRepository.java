@@ -7,7 +7,7 @@ import com.example.sharefavplace.model.Favplace;
 public interface FavplaceCustomRepository {
 
   /**
-   * user_idによるFavplaces取得（ページネーション）
+   * user_idによるFavplace一覧取得（ページネーション）
    * 
    * @param userId
    * @return List<Favplace>
@@ -21,4 +21,13 @@ public interface FavplaceCustomRepository {
    * @return Favplace数
    */
   public long getUsersFavplacesCount(Integer userId);
+
+  /**
+   * user_idによる予定済みのFavplace一覧取得（ページネーション）
+   * 
+   * @param userId
+   * @return List<Favplace>
+   */
+  public List<Favplace> selectScheduledFavplacesbyUserId(Integer userId);
+
 }

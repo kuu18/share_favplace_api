@@ -35,8 +35,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @Table(name = "users")
 public class User extends AbstractEntity implements UserDetails{
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_id_seq")
-  @SequenceGenerator(name = "user_id_seq", sequenceName = "user_id_seq", allocationSize = 1)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "users_id_seq")
+  @SequenceGenerator(name = "users_id_seq", sequenceName = "users_id_seq", allocationSize = 1)
   @Id
   @Column(name = "id")
   private Integer id;

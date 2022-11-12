@@ -10,7 +10,7 @@ import com.example.sharefavplace.model.Favplace;
 public interface FavplaceService {
 
   /**
-   * user_idによるFavplaces取得（ページネーション）
+   * ユーザーのFavplaces一覧取得（ページネーション）
    * 
    * @param userId
    * @return List<Favplace>
@@ -18,12 +18,20 @@ public interface FavplaceService {
   public List<Favplace> getFavplacesByUserId(Integer userId, final int pPageIndex, final int pCountPerPage);
 
   /**
-   * user_idによるFavplace数取得
+   * ユーザーのFavplace総数取得
    * 
    * @param userId
    * @return Favplace数
    */
   public Long getUsersFavplacesCount(Integer userId);
+
+  /**
+   * ユーザーの予定済みFavplace一覧取得
+   * 
+   * @param userId
+   * @return List<Favplace>
+   */
+  public List<Favplace> getScheduledFavplaces(Integer userId);
 
   /**
    * Favplaces新規登録
@@ -32,13 +40,5 @@ public interface FavplaceService {
    * @return Favplace
    */
   public Favplace saveFavplace(Favplace favplace);
-
-  /**
-   * favplaceにcategoryを追加するメソッド
-   * 
-   * @param favplaceId
-   * @param categoryId
-   */
-  public Favplace addCategoryToFavplaces(Integer favplaceId, Iterable<Integer> categoryIds);
 
 }

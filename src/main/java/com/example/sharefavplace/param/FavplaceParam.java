@@ -1,11 +1,11 @@
 package com.example.sharefavplace.param;
 
-import java.util.List;
-
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.validator.constraints.Length;
+
+import com.example.sharefavplace.model.Schedule;
 
 import lombok.Data;
 
@@ -22,9 +22,10 @@ public class FavplaceParam {
   @NotBlank
   private String address;
   @NotNull
-  private List<Integer> categoryIds;
+  private Integer categoryId;
   private String referenceUrl;
   private String remarks;
   @NotNull
   private Integer userId;
+  private Schedule schedule;
 }

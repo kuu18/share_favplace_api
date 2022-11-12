@@ -13,9 +13,8 @@ public interface ToFavplaceMapper {
 
   @Mapping(target = "createdAt", ignore = true)
   @Mapping(target = "updatedAt", ignore = true)
-  @Mapping(target = "categories", ignore = true)
+  @Mapping(target = "category", ignore = true)
   @Mapping(target = "imageUrl", ignore = true)
   @Mapping(target = "user", ignore = true)
-  @Mapping(target = "categoryName", ignore = true)
   Favplace favplaceParamToFavplace(FavplaceParam param);
 }

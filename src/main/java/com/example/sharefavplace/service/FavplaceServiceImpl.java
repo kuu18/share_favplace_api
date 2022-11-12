@@ -12,11 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.sharefavplace.mapper.ToFavplaceMapper;
-import com.example.sharefavplace.model.Category;
 import com.example.sharefavplace.model.Favplace;
 import com.example.sharefavplace.model.User;
 import com.example.sharefavplace.param.FavplaceParam;
-import com.example.sharefavplace.repository.CategoryRepository;
 import com.example.sharefavplace.repository.FavplaceRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -25,15 +23,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional
 public class FavplaceServiceImpl implements FavplaceService {
-  
+
   private final FavplaceRepository favplaceRepository;
-  private final CategoryRepository categoryRepository;
   private final UserService userService;
   private final FileService fileService;
   private Map<String, Object> responseBody = new HashMap<>();
 
   /**
-   * user_idによるFavplaces取得
+   * ユーザーのFavplace一覧取得（ページネーション）
    * 
    * @param userId
    * @return List<Favplace>
@@ -44,7 +41,7 @@ public class FavplaceServiceImpl implements FavplaceService {
   }
 
   /**
-   * user_idによるFavplace数取得
+   * ユーザーのFavplace総数取得
    * 
    * @param userId
    * @return Favplace数
@@ -52,6 +49,17 @@ public class FavplaceServiceImpl implements FavplaceService {
   @Override
   public Long getUsersFavplacesCount(Integer userId) {
     return favplaceRepository.getUsersFavplacesCount(userId);
+  }
+
+  /**
+   * ユーザーの予定済みFavplace一覧取得
+   * 
+   * @param userId
+   * @return List<Favplace>
+   */
+  @Override
+  public List<Favplace> getScheduledFavplaces(Integer userId) {
+    return favplaceRepository.selectScheduledFavplacesbyUserId(userId);
   }
 
   /**
@@ -63,21 +71,6 @@ public class FavplaceServiceImpl implements FavplaceService {
   @Override
   public Favplace saveFavplace(Favplace favplace) {
     return favplaceRepository.save(favplace);
-  }
-
-  /**
-   * favplaceにcategoryを追加するメソッド
-   * 
-   * @param favplaceId
-   * @param categoryId
-   */
-  @Override
-  public Favplace addCategoryToFavplaces(Integer favplaceId, Iterable<Integer> categoryIds) {
-    Favplace favplace = favplaceRepository.findById(favplaceId).get();
-    Iterable<Integer> iterableCategoryIds = categoryIds;
-    List<Category> categories = categoryRepository.findAllById(iterableCategoryIds);
-    categories.stream().forEach(category -> favplace.getCategories().add(category));
-    return favplace;
   }
 
   /**
@@ -111,12 +104,17 @@ public class FavplaceServiceImpl implements FavplaceService {
       favplace.setImageUrl(imageUrl);
     }
     Favplace savedFavplace = saveFavplace(favplace);
-    savedFavplace = addCategoryToFavplaces(savedFavplace.getId(), params.getCategoryIds());
     responseBody.put("message", "favplaceを登録しました。");
     responseBody.put("favplace", savedFavplace);
     return responseBody;
   }
 
+  /**
+   * ユーザーのFavplaces一覧取得ロジック
+   * 
+   * @param userId
+   * @return Map<String, Object> 
+   */
   public Map<String, Object> getFavplacesByUserId(Integer userId, Integer pPageIndex) {
     responseBody.put("favplaces", getFavplacesByUserId(userId, pPageIndex, 12));
     responseBody.put("count", getUsersFavplacesCount(userId));

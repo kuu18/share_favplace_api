@@ -20,11 +20,13 @@ import lombok.Setter;
 @AllArgsConstructor
 @Table(name = "categories")
 public class Category extends AbstractEntity {
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "category_id_seq")
-  @SequenceGenerator(name = "category_id_seq", sequenceName = "category_id_seq", allocationSize = 1)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "categories_id_seq")
+  @SequenceGenerator(name = "categories_id_seq", sequenceName = "categories_id_seq", allocationSize = 1)
   @Id
   @Column(name = "id")
   private Integer id;
   @Column(name = "categoryname")
 	private String categoryname;
+  @Column(name = "color")
+	private String color;
 }

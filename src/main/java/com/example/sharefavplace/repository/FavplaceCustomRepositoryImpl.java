@@ -16,7 +16,7 @@ import com.example.sharefavplace.model.User_;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class FavplaceCustomRepositoryImpl implements FavplaceCustomRepository{
+public class FavplaceCustomRepositoryImpl implements FavplaceCustomRepository {
 
   private final EntityManager entityManager;
 
@@ -32,13 +32,16 @@ public class FavplaceCustomRepositoryImpl implements FavplaceCustomRepository{
     CriteriaQuery<Favplace> qriteriaQuery = criteriaBuilder.createQuery(Favplace.class);
     Root<Favplace> root = qriteriaQuery.from(Favplace.class);
     qriteriaQuery.select(root)
-          .where(criteriaBuilder.equal(root.get(Favplace_.user).get(User_.id), userId)).distinct(true);
+        .where(criteriaBuilder.equal(root.get(Favplace_.user).get(User_.id), userId))
+        .orderBy(criteriaBuilder.asc(root.get(Favplace_.id)))
+        .distinct(true);
     root.fetch(Favplace_.user, JoinType.INNER);
-    root.fetch(Favplace_.categories, JoinType.INNER);
+    root.fetch(Favplace_.category, JoinType.LEFT);
+    root.fetch(Favplace_.schedule, JoinType.LEFT);
     TypedQuery<Favplace> typedQuery = this.entityManager.createQuery(qriteriaQuery);
     return typedQuery.setFirstResult(pPageIndex * pCountPerPage)
-            .setMaxResults(pCountPerPage)
-            .getResultList();
+        .setMaxResults(pCountPerPage)
+        .getResultList();
   }
 
   /**
@@ -53,9 +56,31 @@ public class FavplaceCustomRepositoryImpl implements FavplaceCustomRepository{
     CriteriaQuery<Long> qriteriaQuery = criteriaBuilder.createQuery(Long.class);
     Root<Favplace> root = qriteriaQuery.from(Favplace.class);
     qriteriaQuery.select(criteriaBuilder.count(root))
-          .where(criteriaBuilder.equal(root.get(Favplace_.user).get(User_.id), userId));
+        .where(criteriaBuilder.equal(root.get(Favplace_.user).get(User_.id), userId));
     TypedQuery<Long> typedQuery = this.entityManager.createQuery(qriteriaQuery);
     return typedQuery.getSingleResult();
+  }
+
+  /**
+   * user_idによる予定済みのFavplace一覧取得
+   * 
+   * @param userId
+   * @return List<Favplace>
+   */
+  @Override
+  public List<Favplace> selectScheduledFavplacesbyUserId(Integer userId) {
+    CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+    CriteriaQuery<Favplace> qriteriaQuery = criteriaBuilder.createQuery(Favplace.class);
+    Root<Favplace> root = qriteriaQuery.from(Favplace.class);
+    qriteriaQuery.select(root)
+      .where(criteriaBuilder.equal(root.get(Favplace_.user).get(User_.id), userId))
+      .orderBy(criteriaBuilder.asc(root.get(Favplace_.id)))
+      .distinct(true);
+    root.fetch(Favplace_.user, JoinType.INNER);
+    root.fetch(Favplace_.category, JoinType.LEFT);
+    root.fetch(Favplace_.schedule, JoinType.INNER);
+    TypedQuery<Favplace> typedQuery = this.entityManager.createQuery(qriteriaQuery);
+    return typedQuery.getResultList();
   }
 
 }
