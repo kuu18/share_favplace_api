@@ -9,22 +9,24 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Data
-@EqualsAndHashCode(callSuper=false)
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "categories")
 public class Category extends AbstractEntity {
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "category_id_seq")
-  @SequenceGenerator(name = "category_id_seq", sequenceName = "category_id_seq", allocationSize = 1)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "categories_id_seq")
+  @SequenceGenerator(name = "categories_id_seq", sequenceName = "categories_id_seq", allocationSize = 1)
   @Id
   @Column(name = "id")
   private Integer id;
   @Column(name = "categoryname")
 	private String categoryname;
+  @Column(name = "color")
+	private String color;
 }

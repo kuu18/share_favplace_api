@@ -2,7 +2,9 @@ package com.example.sharefavplace.api;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 
+import com.example.sharefavplace.model.Favplace;
 import com.example.sharefavplace.param.FavplaceParam;
 import com.example.sharefavplace.service.FavplaceServiceImpl;
 import com.example.sharefavplace.utils.ResponseUtils;
@@ -10,6 +12,8 @@ import com.example.sharefavplace.utils.ResponseUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -25,7 +29,28 @@ import lombok.RequiredArgsConstructor;
 public class FavplaceResource {
 
   private final FavplaceServiceImpl favplaceService;
-  
+
+  /**
+   * Favplace取得
+   * @param id
+   * @return Favplace
+   */
+  @GetMapping("/{id}")
+  public ResponseEntity<Favplace> getFavplaceById(@PathVariable Integer id) {
+    return ResponseEntity.ok().body(favplaceService.getFavplaceById(id));
+  }
+
+  /**
+   * ユーザーのFavplace取得
+   * @param id
+   * @param pageIndex
+   * @return ユーザーのFavplace一覧（ページネーション）
+   */
+  @GetMapping("/user/{id}/{pageIndex}")
+  public ResponseEntity<Map<String, Object>> getFavplacesByUserId(@PathVariable Integer id, @PathVariable Integer pageIndex) {
+    return ResponseEntity.ok().body(favplaceService.getFavplacesByUserId(id, pageIndex));
+  }
+
   /**
    * Favplace新規登録
    * 
@@ -34,7 +59,7 @@ public class FavplaceResource {
    * @return 新規登録したFavplace
    */
   @PostMapping("/create")
-  public ResponseEntity<Map<String, Object>> saveFavplace(@RequestPart("image") MultipartFile image, @RequestPart("params") @Validated FavplaceParam params,
+  public ResponseEntity<Map<String, Object>> saveFavplace(@RequestPart(name = "image", required = false) Optional<MultipartFile> image, @RequestPart("params") @Validated FavplaceParam params,
   BindingResult bindingResult) {
     if (bindingResult.hasErrors()) {
       return ResponseEntity.badRequest().body(ResponseUtils.validationErrorResponse(bindingResult));
