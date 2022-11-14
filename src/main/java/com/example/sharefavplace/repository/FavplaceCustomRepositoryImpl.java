@@ -62,25 +62,23 @@ public class FavplaceCustomRepositoryImpl implements FavplaceCustomRepository {
   }
 
   /**
-   * user_idによる予定済みのFavplace一覧取得
+   * idによるFavplace取得（1件）
    * 
    * @param userId
-   * @return List<Favplace>
+   * @return Favplace
    */
   @Override
-  public List<Favplace> selectScheduledFavplacesbyUserId(Integer userId) {
+  public Favplace selectFavplacesbyId(Integer id) {
     CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
     CriteriaQuery<Favplace> qriteriaQuery = criteriaBuilder.createQuery(Favplace.class);
     Root<Favplace> root = qriteriaQuery.from(Favplace.class);
     qriteriaQuery.select(root)
-      .where(criteriaBuilder.equal(root.get(Favplace_.user).get(User_.id), userId))
-      .orderBy(criteriaBuilder.asc(root.get(Favplace_.id)))
-      .distinct(true);
+      .where(criteriaBuilder.equal(root.get(Favplace_.id), id));
     root.fetch(Favplace_.user, JoinType.INNER);
     root.fetch(Favplace_.category, JoinType.LEFT);
     root.fetch(Favplace_.schedule, JoinType.INNER);
     TypedQuery<Favplace> typedQuery = this.entityManager.createQuery(qriteriaQuery);
-    return typedQuery.getResultList();
+    return typedQuery.getSingleResult();
   }
 
 }

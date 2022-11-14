@@ -1,7 +1,6 @@
 package com.example.sharefavplace.api;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -32,13 +31,13 @@ public class FavplaceResource {
   private final FavplaceServiceImpl favplaceService;
 
   /**
-   * 予定済みのFavplace取得
+   * Favplace取得
    * @param id
-   * @return 予定済みのFavplace一覧
+   * @return Favplace
    */
-  @GetMapping("/scheduled/{id}")
-  public ResponseEntity<List<Favplace>> getScheduledFavplaces(@PathVariable Integer id) {
-    return ResponseEntity.ok().body(favplaceService.getScheduledFavplaces(id));
+  @GetMapping("/{id}")
+  public ResponseEntity<Favplace> getFavplaceById(@PathVariable Integer id) {
+    return ResponseEntity.ok().body(favplaceService.getFavplaceById(id));
   }
 
   /**

@@ -23,11 +23,11 @@ public interface FavplaceCustomRepository {
   public long getUsersFavplacesCount(Integer userId);
 
   /**
-   * user_idによる予定済みのFavplace一覧取得（ページネーション）
+   * idによるFavplace取得（1件）
    * 
    * @param userId
-   * @return List<Favplace>
+   * @return Favplace
    */
-  public List<Favplace> selectScheduledFavplacesbyUserId(Integer userId);
+  public Favplace selectFavplacesbyId(Integer id);
 
 }

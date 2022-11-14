@@ -30,6 +30,18 @@ public class FavplaceServiceImpl implements FavplaceService {
   private Map<String, Object> responseBody = new HashMap<>();
 
   /**
+   * idによるFavplace取得（1件）
+   * 
+   * @param id
+   * @return Favplace
+   */
+  @Override
+  public Favplace getFavplaceById(Integer id) {
+    return favplaceRepository.selectFavplacesbyId(id);
+  }
+
+
+  /**
    * ユーザーのFavplace一覧取得（ページネーション）
    * 
    * @param userId
@@ -49,17 +61,6 @@ public class FavplaceServiceImpl implements FavplaceService {
   @Override
   public Long getUsersFavplacesCount(Integer userId) {
     return favplaceRepository.getUsersFavplacesCount(userId);
-  }
-
-  /**
-   * ユーザーの予定済みFavplace一覧取得
-   * 
-   * @param userId
-   * @return List<Favplace>
-   */
-  @Override
-  public List<Favplace> getScheduledFavplaces(Integer userId) {
-    return favplaceRepository.selectScheduledFavplacesbyUserId(userId);
   }
 
   /**
