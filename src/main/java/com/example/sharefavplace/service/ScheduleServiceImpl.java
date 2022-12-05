@@ -15,9 +15,26 @@ public class ScheduleServiceImpl implements ScheduleService {
 
   private final ScheduleRepository scheduleRepository;
 
+  /**
+   * ユーザーのスケジュール一覧取得
+   * 
+   * @param userId
+   * @return responseBody
+   */
   @Override
   public List<Schedule> getSchedulesByUserId(Integer userId) {
     return scheduleRepository.selectSchedulesByUserId(userId);
+  }
+
+  /**
+   * スケジュール新規登録
+   * 
+   * @param schedule
+   * @return
+   */
+  @Override
+  public Schedule saveSchedule(Schedule schedule) {
+    return scheduleRepository.save(schedule);
   }
 
 }

@@ -12,9 +12,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.sharefavplace.mapper.ToFavplaceMapper;
+import com.example.sharefavplace.mapper.ToScheduleMapper;
+import com.example.sharefavplace.model.Category;
 import com.example.sharefavplace.model.Favplace;
+import com.example.sharefavplace.model.Schedule;
 import com.example.sharefavplace.model.User;
 import com.example.sharefavplace.param.FavplaceParam;
+import com.example.sharefavplace.param.ScheduleParam;
 import com.example.sharefavplace.repository.FavplaceRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -26,7 +30,9 @@ public class FavplaceServiceImpl implements FavplaceService {
 
   private final FavplaceRepository favplaceRepository;
   private final UserService userService;
+  private final CategoryService categoryService;
   private final FileService fileService;
+  private final ScheduleService scheduleService;
   private Map<String, Object> responseBody = new HashMap<>();
 
   /**
@@ -75,6 +81,17 @@ public class FavplaceServiceImpl implements FavplaceService {
   }
 
   /**
+   * Favplaceのスケジュール更新
+   * 
+   * @param favplace
+   * @return Favplace
+   */
+  @Override
+  public Favplace updateSchedule(Favplace favplace) {
+    return favplaceRepository.updateSchedule(favplace);
+  }
+
+  /**
    * favplace画像アップロード
    * 
    * @param image
@@ -95,18 +112,39 @@ public class FavplaceServiceImpl implements FavplaceService {
    * @param image
    * @return responseBody
    */
-  public Map<String, Object> saveFavplace(Optional<MultipartFile> image, FavplaceParam params) {
-    User user = userService.findById(params.getUserId()).get();
+  public Map<String, Object> saveFavplace(Optional<MultipartFile> image, FavplaceParam favplaceParam, Optional<ScheduleParam> scheduleParam) {
+    // ユーザー取得
+    User user = userService.findById(favplaceParam.getUserId()).get();
+    // カテゴリー取得
+    Category category = categoryService.findById(favplaceParam.getCategoryId()).get();
+    // Beanマッピング
     Favplace favplace = new Favplace();
-    favplace = ToFavplaceMapper.INSTANCE.favplaceParamToFavplace(params);
+    favplace = ToFavplaceMapper.INSTANCE.favplaceParamToFavplace(favplaceParam);
     favplace.setUser(user);
+    favplace.setCategory(category);
+    // 画像がある場合画像を登録
     if (image.isPresent() && image.get().getSize() != 0) {
       String imageUrl = uploadImage(image.get(), user.getUsername());
       favplace.setImageUrl(imageUrl);
     }
+    // favplace新規登録
     Favplace savedFavplace = saveFavplace(favplace);
+    // スケジュールがある場合スケジュールを登録
+    if(scheduleParam.isPresent()) {
+      Schedule schedule = new Schedule();
+      schedule = scheduleParam.get().getTimed()
+        ? ToScheduleMapper.INSTANCE.scheduleParamToscheduleWithTime(scheduleParam.get())
+        : ToScheduleMapper.INSTANCE.scheduleParamToschedule(scheduleParam.get());
+      schedule.setUser(user);
+      schedule.setFavplace(savedFavplace);
+      scheduleService.saveSchedule(schedule);
+      savedFavplace.setSchedule(schedule);
+      Favplace updatedFavplace = updateSchedule(savedFavplace);
+      responseBody.put("favplace", updatedFavplace);
+    } else {
+      responseBody.put("favplace", savedFavplace);
+    }
     responseBody.put("message", "favplaceを登録しました。");
-    responseBody.put("favplace", savedFavplace);
     return responseBody;
   }
 

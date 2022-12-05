@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import com.example.sharefavplace.model.Favplace;
 import com.example.sharefavplace.param.FavplaceParam;
+import com.example.sharefavplace.param.ScheduleParam;
 import com.example.sharefavplace.service.FavplaceServiceImpl;
 import com.example.sharefavplace.utils.ResponseUtils;
 
@@ -59,12 +60,15 @@ public class FavplaceResource {
    * @return 新規登録したFavplace
    */
   @PostMapping("/create")
-  public ResponseEntity<Map<String, Object>> saveFavplace(@RequestPart(name = "image", required = false) Optional<MultipartFile> image, @RequestPart("params") @Validated FavplaceParam params,
-  BindingResult bindingResult) {
+  public ResponseEntity<Map<String, Object>> saveFavplace(
+    @RequestPart(name = "image", required = false) Optional<MultipartFile> image,
+    @RequestPart("favplaceParams") @Validated FavplaceParam favplaceParams,
+    @RequestPart(name = "scheduleParams", required = false) @Validated Optional<ScheduleParam> scheduleParams,
+    BindingResult bindingResult) {
     if (bindingResult.hasErrors()) {
       return ResponseEntity.badRequest().body(ResponseUtils.validationErrorResponse(bindingResult));
     }
     URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/favplaces/create").toUriString());
-    return ResponseEntity.created(uri).body(favplaceService.saveFavplace(image, params));
+    return ResponseEntity.created(uri).body(favplaceService.saveFavplace(image, favplaceParams, scheduleParams));
   }
 }

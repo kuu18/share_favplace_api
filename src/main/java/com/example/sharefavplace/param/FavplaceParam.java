@@ -5,8 +5,6 @@ import javax.validation.constraints.NotNull;
 
 import org.hibernate.validator.constraints.Length;
 
-import com.example.sharefavplace.model.Schedule;
-
 import lombok.Data;
 
 @Data
@@ -27,5 +25,4 @@ public class FavplaceParam {
   private String remarks;
   @NotNull
   private Integer userId;
-  private Schedule schedule;
 }
