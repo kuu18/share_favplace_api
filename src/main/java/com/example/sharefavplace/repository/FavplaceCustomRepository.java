@@ -30,4 +30,12 @@ public interface FavplaceCustomRepository {
    */
   public Favplace selectFavplacesbyId(Integer id);
 
+  /**
+   * Favplaceのスケジュール更新
+   * 
+   * @param favplace
+   * @return Favplace
+   */
+  public Favplace updateSchedule(Favplace favplace);
+
 }

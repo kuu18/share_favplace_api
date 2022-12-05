@@ -41,4 +41,12 @@ public interface FavplaceService {
    */
   public Favplace saveFavplace(Favplace favplace);
 
+  /**
+   * Favplacesのスケジュール更新
+   * 
+   * @param favplace
+   * @return Favplace
+   */
+  public Favplace updateSchedule(Favplace favplace);
+
 }

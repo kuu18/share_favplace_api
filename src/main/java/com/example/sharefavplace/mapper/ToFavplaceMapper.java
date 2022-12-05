@@ -16,5 +16,6 @@ public interface ToFavplaceMapper {
   @Mapping(target = "category", ignore = true)
   @Mapping(target = "imageUrl", ignore = true)
   @Mapping(target = "user", ignore = true)
+  @Mapping(target = "schedule", ignore = true)
   Favplace favplaceParamToFavplace(FavplaceParam param);
 }

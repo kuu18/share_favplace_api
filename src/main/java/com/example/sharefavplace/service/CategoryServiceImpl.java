@@ -1,6 +1,7 @@
 package com.example.sharefavplace.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,11 @@ public class CategoryServiceImpl implements CategoryService {
    */
   public List<Category> findAllCategory() {
     return categoryRepository.findAll();
+  }
+
+  @Override
+  public Optional<Category> findById(Integer id) {
+    return categoryRepository.findById(id);
   }
 
 }

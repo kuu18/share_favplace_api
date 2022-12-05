@@ -72,4 +72,5 @@ public class Schedule extends AbstractEntity {
   public String getEnd() {
     return timed ? dfwithTime.format(end) : df.format(end);
   }
+
 }

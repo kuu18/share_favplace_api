@@ -17,5 +17,13 @@ public interface ScheduleService {
    */
   public List<Schedule> getSchedulesByUserId(Integer userId);
 
+  /**
+   * スケジュール新規登録
+   * 
+   * @param schedule
+   * @return
+   */
+  public Schedule saveSchedule(Schedule schedule);
+
 }
 
