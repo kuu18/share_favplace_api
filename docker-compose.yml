@@ -29,6 +29,7 @@ services:
   api:
     build:
       context: .
+      dockerfile: Dockerfile
       args:
         WORKDIR: $WORKDIR
     container_name: share_favplace_api
