@@ -1,10 +1,12 @@
 FROM openjdk:11-jdk
 
-ENV LANG=C.UTF-8 \
-    TZ=Asia/Tokyo
+ENV HOME=/app \
+    LANG=C.UTF-8 \
+    TZ=Asia/Tokyo \
+    HOST=0.0.0.0
+
+WORKDIR ${HOME}
 
 EXPOSE 8080
 
-ADD target/spring-boot-share-favplace.war spring-boot-share-favplace.war
-
-ENTRYPOINT [ "java", "-jar", "/spring-boot-share-favplace.war" ]
+ADD target/spring-boot-share-favplace.war ${HOME}/spring-boot-share-favplace.war

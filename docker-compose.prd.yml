@@ -1,0 +1,79 @@
+x-aws-vpc: ${AWS_VPC}
+x-aws-cluster: ${AWS_ECS_CLUSTER}
+x-aws-loadbalancer: ${AWS_ALB}
+
+services:
+  api:
+    image: ${AWS_API_IMAGE}
+    env_file:
+      - ./environment/api-variables-prd.env
+    command: java -jar ./spring-boot-share-favplace.war
+    ports:
+      - target: ${API_PORT}
+        x-aws-protocol: https
+    networks:
+      - sharefavplaceapi
+
+  pgadmin4:
+    image: dpage/pgadmin4
+    ports:
+      - target: ${PGADMIN_PORT}
+        x-aws-protocol: https
+    env_file:
+      - ./environment/pgadmin4-variables.env
+    networks:
+      - sharefavplacepgadmin4
+
+networks:
+  sharefavplaceapi:
+    external: true
+    name: ${AWS_SECURITY_GROUP_API}
+  sharefavplacepgadmin4:
+    external: true
+    name: ${AWS_SECURITY_GROUP_PGADMIN4}
+
+x-aws-cloudformation:
+  Resources:
+    Api8080TargetGroup:
+      Properties:
+        HealthCheckPath: /api/v1/healthcheck
+        HealthCheckTimeoutSeconds: 30
+        HealthCheckIntervalSeconds: 300
+        UnhealthyThresholdCount: 5
+        Matcher:
+          HttpCode: 200
+    Pgadmin48888TargetGroup:
+      Properties:
+        HealthCheckPath: /misc/ping
+        HealthCheckTimeoutSeconds: 30
+        HealthCheckIntervalSeconds: 300
+        UnhealthyThresholdCount: 5
+        Matcher:
+          HttpCode: 200
+    Api8080Listener:
+      Properties:
+        Certificates:
+          - CertificateArn: ${AWS_CERTIFICATE}
+        Protocol: HTTPS
+        Port: 443
+    Pgadmin48888Listener:
+      Properties:
+        Certificates:
+          - CertificateArn: ${AWS_CERTIFICATE}
+        Protocol: HTTPS
+        Port: 8888
+    ALBListenerHTTP:
+      Type: "AWS::ElasticLoadBalancingV2::Listener"
+      Properties:
+        Port: 80
+        Protocol: HTTP
+        DefaultActions:
+          - Type: redirect
+            RedirectConfig: 
+              Host: '#{host}'
+              Path: '/#{path}'
+              Port: 443
+              Protocol: HTTPS
+              Query: '#{query}'
+              StatusCode: HTTP_301
+        LoadBalancerArn: ${AWS_ALB}
