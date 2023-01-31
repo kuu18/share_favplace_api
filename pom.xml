@@ -16,6 +16,8 @@
 	<description>Demo project for Spring Boot</description>
 	<properties>
 		<java.version>11</java.version>
+    <org.mapstruct.version>1.5.0.Final</org.mapstruct.version>
+    <org.projectlombok.version>1.18.24</org.projectlombok.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -35,7 +37,7 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-      <version>1.18.24</version>
+      <version>${org.projectlombok.version}</version>
 			<optional>true</optional>
       <scope>provided</scope>
 		</dependency>
@@ -68,13 +70,15 @@
     <dependency>
       <groupId>org.mapstruct</groupId>
       <artifactId>mapstruct</artifactId>
-      <version>1.4.2.Final</version>
+      <version>${org.mapstruct.version}</version>
+      <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.mapstruct/mapstruct-processor -->
     <dependency>
       <groupId>org.mapstruct</groupId>
       <artifactId>mapstruct-processor</artifactId>
-      <version>1.4.2.Final</version>
+      <version>${org.mapstruct.version}</version>
       <scope>provided</scope>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-security -->
@@ -117,15 +121,13 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-					<excludes>
-						<exclude>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-						</exclude>
-					</excludes>
-				</configuration>
 			</plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.10.0</version>
+      </plugin>
 		</plugins>
+    <finalName>spring-boot-share-favplace</finalName>
 	</build>
 </project>

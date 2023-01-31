@@ -43,7 +43,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
     // 承認のいらないリソースへのパスの場合は何もしない
     if (servletPath.equals("/api/v1/login") || servletPath.equals("/api/v1/users/create")
         || servletPath.equals("/api/v1/token/refresh") || servletPath.equals("/api/v1/logout")
-        || servletPath.equals("/api/v1/users/password/forget")) {
+        || servletPath.equals("/api/v1/users/password/forget") || servletPath.equals("/api/v1/healthcheck")) {
       // フィルターを抜ける
       filterChain.doFilter(request, response);
     } else {
