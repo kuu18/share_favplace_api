@@ -211,6 +211,6 @@ public class UserResource {
     if (bindingResult.hasErrors()) {
       return ResponseEntity.badRequest().body(ResponseUtils.validationErrorResponse(bindingResult));
     }
-    return ResponseEntity.ok().body(userService.deleteUser(param));
+    return ResponseEntity.ok().body(userService.deleteUserAndAvatar(param));
   }
 }

@@ -31,7 +31,7 @@ public class FavplaceServiceImpl implements FavplaceService {
   private final FavplaceRepository favplaceRepository;
   private final UserService userService;
   private final CategoryService categoryService;
-  private final FileService fileService;
+  private final S3FileService fileService;
   private final ScheduleService scheduleService;
   private Map<String, Object> responseBody = new HashMap<>();
 
@@ -100,7 +100,7 @@ public class FavplaceServiceImpl implements FavplaceService {
    */
   public String uploadImage(MultipartFile image, String username) {
     LocalDateTime createAt = LocalDateTime.now();
-    String s3Path = System.getenv("AWSS3_BUCKET_NAME") + "/" + username + "/favplace";
+    String s3Path = "/favplace";
     String imageUrl = fileService.fileUpload(image, createAt, s3Path).toString();
     return imageUrl;
   }
@@ -126,6 +126,10 @@ public class FavplaceServiceImpl implements FavplaceService {
     if (image.isPresent() && image.get().getSize() != 0) {
       String imageUrl = uploadImage(image.get(), user.getUsername());
       favplace.setImageUrl(imageUrl);
+    }
+    // それ以外の場合デフォルト画像登録
+    else {
+      favplace.setImageUrl(System.getenv("DEFAULT_FAVPLACE_IMAGE"));
     }
     // favplace新規登録
     Favplace savedFavplace = saveFavplace(favplace);
