@@ -35,7 +35,7 @@ import lombok.RequiredArgsConstructor;
 public class UserServiceImpl implements UserService {
   private final UserRepository userRepository;
   private final RoleRepository roleRepository;
-  private final FileService fileService;
+  private final S3FileService s3FileService;
   private final PasswordEncoder passwordEncoder;
   private Map<String, Object> responseBody = new HashMap<>();
 
@@ -243,8 +243,7 @@ public class UserServiceImpl implements UserService {
     User user = new User();
     user = ToUserMapper.INSTANCE.userParamToUser(param);
     // 初期アバター設定
-    user.setAvatarUrl("https://" + System.getenv("AWSS3_BUCKET_NAME") + ".s3." +
-        System.getenv("AWSS3_REGION") + ".amazonaws.com/default/default_avatar.png");
+    user.setAvatarUrl(System.getenv("DEFAULT_AVATAR"));
     // メールアドレスまたはユーザーネームがすでに登録されているか判定し、登録する
     user = checkExistsAndSaveUser(user);
     return user;
@@ -326,12 +325,20 @@ public class UserServiceImpl implements UserService {
    * @return
    */
   public Map<String, Object> updateAvatar(String username, MultipartFile avatar) {
-    LocalDateTime createAt = LocalDateTime.now();
-    String s3Path = System.getenv("AWSS3_BUCKET_NAME") + "/" + username + "/avatar";
-    String avatarUrl = fileService.fileUpload(avatar, createAt, s3Path).toString();
     User user = findByUsername(username);
+    // ユーザーの現在のアバター画像キー取得
+    String avatarObjectKey = s3FileService.getS3ObjectKeyFromUrl(user.getAvatarUrl());
+    // AWSS3へのアバター画像アップロード 
+    LocalDateTime createAt = LocalDateTime.now();
+    String s3Path = "/avatar";
+    String avatarUrl = s3FileService.fileUpload(avatar, createAt, s3Path).toString();
+    // ユーザーのアバター画像更新
     user.setAvatarUrl(avatarUrl);
     updateAvatarUrl(user);
+    // デフォルト画像でない場合更新前のアバター画像をS3から削除
+    if (!avatarObjectKey.startsWith("default")){
+      s3FileService.fileDelete(avatarObjectKey);
+    }
     responseBody.put("avatar_url", avatarUrl);
     responseBody.put("message", "プロフィール画像を更新しました。");
     return responseBody;
@@ -343,12 +350,32 @@ public class UserServiceImpl implements UserService {
    * @param param
    * @return
    */
-  public Map<String, Object> deleteUser(UserParam param) {
-    Optional<User> user = findById(param.getId());
-    if (!passwordEncoder.matches(param.getPassword(), user.get().getPassword())) {
+  public Map<String, Object> deleteUserAndAvatar(UserParam param) {
+    User user = findById(param.getId()).orElseThrow(() -> new RuntimeException("ユーザーが取得できません"));
+    if (!passwordEncoder.matches(param.getPassword(), user.getPassword())) {
       throw new ApiRequestException("パスワードが違います。");
     }
-    deleteUser(user.get());
+    // ユーザーアバター画像URL取得
+    String avatarUrl = user.getAvatarUrl();
+    // AWSS3オブジェクトキーの取得
+    String avatarObjectKey = s3FileService.getS3ObjectKeyFromUrl(avatarUrl);
+    // 現在の画像がデフォルト画像でないならAWSS3からアバター画像削除する
+    if (!avatarObjectKey.startsWith("default")){
+      s3FileService.fileDelete(avatarObjectKey);
+    }
+    // AWSS3からユーザーの全てのfavplace画像削除する
+    user.getFavplaces().forEach(favplace -> {
+      // favplace画像URL取得
+      String imageUrl = favplace.getImageUrl();
+      // AWSS3オブジェクトキーの取得
+      String favplaceObjectKey = s3FileService.getS3ObjectKeyFromUrl(imageUrl);
+      // デフォルトのnoimage画像でないならAWSS3からfavplace画像削除する
+      if (!favplaceObjectKey.startsWith("default")){
+        s3FileService.fileDelete(favplaceObjectKey);
+      }
+    });
+    // userを削除する
+    deleteUser(user);
     responseBody.put("message", "アカウントを削除しました。");
     return responseBody;
   }

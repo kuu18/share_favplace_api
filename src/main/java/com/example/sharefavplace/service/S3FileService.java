@@ -20,8 +20,9 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class FileService {
+public class S3FileService {
   private final AmazonS3 s3Client;
+  private final String s3BucketName = System.getenv("AWSS3_BUCKET_NAME");
 	
   /**
    * AWSs3へファイルをアップロードする処理
@@ -30,8 +31,9 @@ public class FileService {
    * @param s3PathName
    * @return
    * @throws IOException
+   * @throws AmazonServiceException
    */
-  public URL fileUpload(MultipartFile multipartFile, LocalDateTime createAt, String s3PathName) {
+  public URL fileUpload(MultipartFile multipartFile, LocalDateTime createAt, String s3Path) {
     Optional<String> contentType = Optional.ofNullable(multipartFile.getContentType());
     contentType.orElseThrow(() -> new ApiRequestException("画像ファイルを選択してください。"));
     if (
@@ -41,18 +43,47 @@ public class FileService {
     ) {
       throw new ApiRequestException("画像ファイルを選択してください。");
     }
-    DateTimeFormatter fm = DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss");
+    DateTimeFormatter fm = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 		String extension = FilenameUtils.getExtension(multipartFile.getOriginalFilename()).toLowerCase();
     String fileName = createAt.format(fm) +"." + extension;
     File uploadFile = new File(fileName);
+    s3Path = s3BucketName + s3Path;
     try (FileOutputStream uploadFileStream = new FileOutputStream(uploadFile)){
       byte[] bytes = multipartFile.getBytes();
       uploadFileStream.write(bytes);
-      s3Client.putObject(s3PathName, fileName, uploadFile);
+      s3Client.putObject(s3Path, fileName, uploadFile);
       uploadFile.delete();
-      return s3Client.getUrl(s3PathName, fileName);
+      return s3Client.getUrl(s3Path, fileName);
     } catch (AmazonServiceException | IOException e) {
+      // TODO
       throw new RuntimeException(e);
     }
 	}
+
+  /**
+   * AWSS3のファイルを削除する処理
+   * 
+   * @param bucketName
+   * @param imageUrl
+   * @return
+   * @throws AmazonServiceException
+   */
+  public void fileDelete(String objectKey) {
+    try {
+      // S3オブジェクト削除
+      s3Client.deleteObject(s3BucketName, objectKey);
+    } catch (AmazonServiceException e) {
+      // TODO
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * S3URLからS3オブジェクトキーを取得する
+   * @param url
+   * @return objectKey
+   */
+  public String getS3ObjectKeyFromUrl(String url) {
+    return url.substring(url.lastIndexOf("/", url.lastIndexOf("/") - 1) + 1);
+  }
 }
