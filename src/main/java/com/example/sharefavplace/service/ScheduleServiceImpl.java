@@ -37,4 +37,9 @@ public class ScheduleServiceImpl implements ScheduleService {
     return scheduleRepository.save(schedule);
   }
 
+  @Override
+  public Schedule updateSchedule(Schedule schedule) {
+    return scheduleRepository.updateSchedule(schedule);
+  }
+
 }

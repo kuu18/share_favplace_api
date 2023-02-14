@@ -9,20 +9,24 @@ import lombok.Data;
 
 @Data
 public class FavplaceParam {
+  @NotNull(groups = UpdateDeleteGroup.class)
   private Integer id;
-  @NotBlank
-  @Length(max = 50)
+  @NotBlank(groups = {CreateGroup.class, UpdateDeleteGroup.class})
+  @Length(max = 50, groups = {CreateGroup.class, UpdateDeleteGroup.class})
   private String favplacename;
-  @NotBlank
+  @NotBlank(groups = {CreateGroup.class, UpdateDeleteGroup.class})
   private String prefecture;
-  @NotBlank
+  @NotBlank(groups = {CreateGroup.class, UpdateDeleteGroup.class})
   private String municipality;
-  @NotBlank
+  @NotBlank(groups = {CreateGroup.class, UpdateDeleteGroup.class})
   private String address;
-  @NotNull
+  @NotNull(groups = {CreateGroup.class, UpdateDeleteGroup.class})
   private Integer categoryId;
   private String referenceUrl;
   private String remarks;
-  @NotNull
+  @NotNull(groups = {CreateGroup.class, UpdateDeleteGroup.class})
   private Integer userId;
+
+  public interface CreateGroup{}
+  public interface UpdateDeleteGroup{}
 }

@@ -21,9 +21,17 @@ public interface ScheduleService {
    * スケジュール新規登録
    * 
    * @param schedule
-   * @return
+   * @return Schdule
    */
   public Schedule saveSchedule(Schedule schedule);
+
+  /**
+   * スケジュール更新
+   * 
+   * @param schedule
+   * @return Schdule
+   */
+  public Schedule updateSchedule(Schedule schedule);
 
 }
 

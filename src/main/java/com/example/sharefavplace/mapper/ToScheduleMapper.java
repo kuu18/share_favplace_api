@@ -15,9 +15,9 @@ public interface ToScheduleMapper {
   @Mapping(target = "updatedAt", ignore = true)
   @Mapping(target = "df", ignore = true)
   @Mapping(target = "dfwithTime", ignore = true)
+  @Mapping(target = "dfOnlyTime", ignore = true)
   @Mapping(target = "favplace", ignore = true)
   @Mapping(target = "user", ignore = true)
-  @Mapping(target = "id", ignore = true)
   @Mapping(target = "start", dateFormat = "yyyy-MM-dd")
   @Mapping(target = "end", dateFormat = "yyyy-MM-dd")
   Schedule scheduleParamToschedule(ScheduleParam scheduleParam);
@@ -26,9 +26,9 @@ public interface ToScheduleMapper {
   @Mapping(target = "updatedAt", ignore = true)
   @Mapping(target = "df", ignore = true)
   @Mapping(target = "dfwithTime", ignore = true)
+  @Mapping(target = "dfOnlyTime", ignore = true)
   @Mapping(target = "favplace", ignore = true)
   @Mapping(target = "user", ignore = true)
-  @Mapping(target = "id", ignore = true)
   @Mapping(target = "start", dateFormat = "yyyy-MM-dd HH:mm")
   @Mapping(target = "end", dateFormat = "yyyy-MM-dd HH:mm")
   Schedule scheduleParamToscheduleWithTime(ScheduleParam scheduleParam);

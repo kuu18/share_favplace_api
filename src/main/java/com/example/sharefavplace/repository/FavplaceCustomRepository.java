@@ -36,6 +36,14 @@ public interface FavplaceCustomRepository {
    * @param favplace
    * @return Favplace
    */
-  public Favplace updateSchedule(Favplace favplace);
+  public Favplace updateFavplaceSchedule(Favplace favplace);
+
+  /**
+   * Favplace更新
+   * 
+   * @param favplace
+   * @return Favplace
+   */
+  public Favplace updateFavplace(Favplace favplace);
 
 }
