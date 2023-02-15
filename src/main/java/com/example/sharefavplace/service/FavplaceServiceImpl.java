@@ -46,7 +46,6 @@ public class FavplaceServiceImpl implements FavplaceService {
     return favplaceRepository.selectFavplacesbyId(id);
   }
 
-
   /**
    * ユーザーのFavplace一覧取得（ページネーション）
    * 
@@ -81,14 +80,25 @@ public class FavplaceServiceImpl implements FavplaceService {
   }
 
   /**
+   * Favplace更新
+   * 
+   * @param favplace
+   * @return Favplace
+   */
+  @Override
+  public Favplace updateFavplace(Favplace favplace) {
+    return favplaceRepository.updateFavplace(favplace);
+  }
+
+  /**
    * Favplaceのスケジュール更新
    * 
    * @param favplace
    * @return Favplace
    */
   @Override
-  public Favplace updateSchedule(Favplace favplace) {
-    return favplaceRepository.updateSchedule(favplace);
+  public Favplace updateFavplaceSchedule(Favplace favplace) {
+    return favplaceRepository.updateFavplaceSchedule(favplace);
   }
 
   /**
@@ -112,7 +122,8 @@ public class FavplaceServiceImpl implements FavplaceService {
    * @param image
    * @return responseBody
    */
-  public Map<String, Object> saveFavplace(Optional<MultipartFile> image, FavplaceParam favplaceParam, Optional<ScheduleParam> scheduleParam) {
+  public Map<String, Object> saveFavplace(Optional<MultipartFile> image, FavplaceParam favplaceParam,
+      Optional<ScheduleParam> scheduleParam) {
     // ユーザー取得
     User user = userService.findById(favplaceParam.getUserId()).get();
     // カテゴリー取得
@@ -134,16 +145,16 @@ public class FavplaceServiceImpl implements FavplaceService {
     // favplace新規登録
     Favplace savedFavplace = saveFavplace(favplace);
     // スケジュールがある場合スケジュールを登録
-    if(scheduleParam.isPresent()) {
+    if (scheduleParam.isPresent()) {
       Schedule schedule = new Schedule();
       schedule = scheduleParam.get().getTimed()
-        ? ToScheduleMapper.INSTANCE.scheduleParamToscheduleWithTime(scheduleParam.get())
-        : ToScheduleMapper.INSTANCE.scheduleParamToschedule(scheduleParam.get());
+          ? ToScheduleMapper.INSTANCE.scheduleParamToscheduleWithTime(scheduleParam.get())
+          : ToScheduleMapper.INSTANCE.scheduleParamToschedule(scheduleParam.get());
       schedule.setUser(user);
       schedule.setFavplace(savedFavplace);
       scheduleService.saveSchedule(schedule);
       savedFavplace.setSchedule(schedule);
-      Favplace updatedFavplace = updateSchedule(savedFavplace);
+      Favplace updatedFavplace = updateFavplaceSchedule(savedFavplace);
       responseBody.put("favplace", updatedFavplace);
     } else {
       responseBody.put("favplace", savedFavplace);
@@ -153,10 +164,60 @@ public class FavplaceServiceImpl implements FavplaceService {
   }
 
   /**
+   * favplace更新ロジック
+   * 
+   * @param favplaceparam
+   * @param image
+   * @param scheduleparam
+   * @return responseBody
+   */
+  public Map<String, Object> updateFavplace(Optional<MultipartFile> image, FavplaceParam favplaceParam,
+      Optional<ScheduleParam> scheduleParam) {
+    // ユーザー取得
+    User user = userService.findById(favplaceParam.getUserId()).get();
+    // カテゴリー取得
+    Category category = categoryService.findById(favplaceParam.getCategoryId()).get();
+    // 現在のFavplace取得
+    Favplace oldFavplace = getFavplaceById(favplaceParam.getId());
+    // Beanマッピング
+    Favplace favplace = new Favplace();
+    favplace = ToFavplaceMapper.INSTANCE.favplaceParamToFavplace(favplaceParam);
+    favplace.setCategory(category);
+    // 画像がある場合画像を更新
+    if (image.isPresent() && image.get().getSize() != 0) {
+      String imageUrl = uploadImage(image.get(), user.getUsername());
+      favplace.setImageUrl(imageUrl);
+    }
+    // 画像がない場合既存の画像設定
+    else {
+      favplace.setImageUrl(oldFavplace.getImageUrl());
+    }
+    // スケジュールがある場合スケジュールを更新
+    if (scheduleParam.isPresent()) {
+      Schedule schedule = new Schedule();
+      schedule = scheduleParam.get().getTimed()
+          ? ToScheduleMapper.INSTANCE.scheduleParamToscheduleWithTime(scheduleParam.get())
+          : ToScheduleMapper.INSTANCE.scheduleParamToschedule(scheduleParam.get());
+      schedule = scheduleService.updateSchedule(schedule);
+      favplace.setSchedule(schedule);
+    }
+    // TODO スケジュールがない場合スケジュール削除
+    else {
+      favplace.setSchedule(oldFavplace.getSchedule());
+    }
+    // favplace更新
+    favplace = updateFavplace(favplace);
+    // レスポンス生成
+    responseBody.put("favplace", favplace);
+    responseBody.put("message", "favplaceを更新しました。");
+    return responseBody;
+  }
+
+  /**
    * ユーザーのFavplaces一覧取得ロジック
    * 
    * @param userId
-   * @return Map<String, Object> 
+   * @return Map<String, Object>
    */
   public Map<String, Object> getFavplacesByUserId(Integer userId, Integer pPageIndex) {
     responseBody.put("favplaces", getFavplacesByUserId(userId, pPageIndex, 12));

@@ -9,7 +9,7 @@ import com.example.sharefavplace.model.Favplace;
 @Service
 public interface FavplaceService {
 
-    /**
+  /**
    * idによるFavplace取得（1件）
    * 
    * @param id
@@ -34,7 +34,7 @@ public interface FavplaceService {
   public Long getUsersFavplacesCount(Integer userId);
 
   /**
-   * Favplaces新規登録
+   * Favplace新規登録
    * 
    * @param favplace
    * @return Favplace
@@ -42,11 +42,19 @@ public interface FavplaceService {
   public Favplace saveFavplace(Favplace favplace);
 
   /**
-   * Favplacesのスケジュール更新
+   * Favplace更新
    * 
    * @param favplace
    * @return Favplace
    */
-  public Favplace updateSchedule(Favplace favplace);
+  public Favplace updateFavplace(Favplace favplace);
+
+  /**
+   * Favplaceのスケジュール更新
+   * 
+   * @param favplace
+   * @return Favplace
+   */
+  public Favplace updateFavplaceSchedule(Favplace favplace);
 
 }

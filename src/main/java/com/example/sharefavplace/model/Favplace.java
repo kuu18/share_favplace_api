@@ -12,7 +12,8 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -44,7 +45,6 @@ public class Favplace extends AbstractEntity {
   @Column(name = "address")
   private String address;
   @ManyToOne(fetch = FetchType.LAZY)
-  @JsonIgnore
   private Category category;
   @Column(name = "reference_url")
   private String referenceUrl;
@@ -55,7 +55,7 @@ public class Favplace extends AbstractEntity {
   @ManyToOne(fetch = FetchType.LAZY)
   private User user;
   @OneToOne
-  @JsonIgnore
+  @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class)
   private Schedule schedule;
 
   public Integer getScheduleId() {

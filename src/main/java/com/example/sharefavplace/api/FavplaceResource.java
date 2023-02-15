@@ -62,13 +62,32 @@ public class FavplaceResource {
   @PostMapping("/create")
   public ResponseEntity<Map<String, Object>> saveFavplace(
     @RequestPart(name = "image", required = false) Optional<MultipartFile> image,
-    @RequestPart("favplaceParams") @Validated FavplaceParam favplaceParams,
-    @RequestPart(name = "scheduleParams", required = false) @Validated Optional<ScheduleParam> scheduleParams,
+    @RequestPart("favplaceParams") @Validated(FavplaceParam.CreateGroup.class) FavplaceParam favplaceParams,
+    @RequestPart(name = "scheduleParams", required = false) @Validated(ScheduleParam.CreateGroup.class) Optional<ScheduleParam> scheduleParams,
     BindingResult bindingResult) {
     if (bindingResult.hasErrors()) {
       return ResponseEntity.badRequest().body(ResponseUtils.validationErrorResponse(bindingResult));
     }
     URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/favplaces/create").toUriString());
     return ResponseEntity.created(uri).body(favplaceService.saveFavplace(image, favplaceParams, scheduleParams));
+  }
+
+  /**
+   * Favplace更新
+   * 
+   * @param param
+   * @param bindingResult
+   * @return 更新したFavplace
+   */
+  @PostMapping("/update")
+  public ResponseEntity<Map<String, Object>> updateFavplace(
+    @RequestPart(name = "image", required = false) Optional<MultipartFile> image,
+    @RequestPart("favplaceParams") @Validated(FavplaceParam.UpdateDeleteGroup.class) FavplaceParam favplaceParams,
+    @RequestPart(name = "scheduleParams", required = false) @Validated(ScheduleParam.UpdateDeleteGroup.class) Optional<ScheduleParam> scheduleParams,
+    BindingResult bindingResult) {
+    if (bindingResult.hasErrors()) {
+      return ResponseEntity.badRequest().body(ResponseUtils.validationErrorResponse(bindingResult));
+    }
+    return ResponseEntity.ok().body(favplaceService.updateFavplace(image, favplaceParams, scheduleParams));
   }
 }

@@ -17,4 +17,12 @@ public interface ScheduleCustomRepository {
    */
   public List<Schedule> selectSchedulesByUserId(Integer userId);
 
+  /**
+   * Schedule更新
+   * 
+   * @param schedule
+   * @return Schedule
+   */
+  public Schedule updateSchedule(Schedule schedule);
+
 }

@@ -52,6 +52,9 @@ public class Schedule extends AbstractEntity {
   @Transient
   @JsonIgnore
   private SimpleDateFormat dfwithTime = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+  @Transient
+  @JsonIgnore
+  private SimpleDateFormat dfOnlyTime = new SimpleDateFormat("HH:mm");
 
   public String getName() {
     return favplace.getFavplacename();
@@ -71,6 +74,34 @@ public class Schedule extends AbstractEntity {
 
   public String getEnd() {
     return timed ? dfwithTime.format(end) : df.format(end);
+  }
+
+  public ScheduleData getScheduleData() {
+    ScheduleData scheduleData = new ScheduleData();
+    scheduleData.setStartDay(df.format(start));
+    scheduleData.setEndDay(df.format(end));
+    scheduleData.setStartTime(dfOnlyTime.format(start));
+    scheduleData.setEndTime(dfOnlyTime.format(end));
+    return scheduleData;
+  }
+
+  @Transient
+  public Date getStartWithDateType() {
+    return start;
+  }
+
+  @Transient
+  public Date getEndWithDateType() {
+    return end;
+  }
+
+  @Getter
+  @Setter
+  private class ScheduleData {
+    private String startDay;
+    private String endDay;
+    private String startTime;
+    private String endTime;
   }
 
 }
