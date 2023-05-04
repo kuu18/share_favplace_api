@@ -47,7 +47,7 @@ public interface FavplaceService {
    * @param favplace
    * @return Favplace
    */
-  public Favplace updateFavplace(Favplace favplace);
+  public void updateFavplace(Favplace favplace);
 
   /**
    * Favplaceのスケジュール更新
@@ -56,5 +56,12 @@ public interface FavplaceService {
    * @return Favplace
    */
   public Favplace updateFavplaceSchedule(Favplace favplace);
+
+  /**
+   * Favplace削除
+   * 
+   * @param favplace
+   */
+  public void deleteFavplace(Favplace favplace);
 
 }

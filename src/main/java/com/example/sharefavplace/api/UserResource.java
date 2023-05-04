@@ -195,7 +195,7 @@ public class UserResource {
   @PostMapping("/{username}/avatar")
   public ResponseEntity<Map<String, Object>> uploadAvatar(@PathVariable("username") String username,
       @RequestParam("avatar") MultipartFile avatar) {
-      return ResponseEntity.badRequest().body(userService.updateAvatar(username, avatar));
+      return ResponseEntity.ok().body(userService.updateAvatar(username, avatar));
   }
 
   /**

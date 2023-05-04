@@ -44,6 +44,6 @@ public interface FavplaceCustomRepository {
    * @param favplace
    * @return Favplace
    */
-  public Favplace updateFavplace(Favplace favplace);
+  public void updateFavplace(Favplace favplace);
 
 }

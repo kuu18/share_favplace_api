@@ -66,4 +66,8 @@ public class Favplace extends AbstractEntity {
     return category != null ? category.getCategoryname() : null;
   }
 
+  public String getFullAddress() {
+    return prefecture + " " + municipality + " " + address;
+  }
+
 }

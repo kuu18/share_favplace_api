@@ -65,6 +65,8 @@ public class ScheduleCustomRepositoryImpl implements ScheduleCustomRepository {
       root = qriteriaQuery.from(Schedule.class);
       qriteriaQuery.select(root)
           .where(root.get(Schedule_.id).in(schedule.getId()));
+      root.fetch(Schedule_.user, JoinType.INNER);
+      root.fetch(Schedule_.favplace, JoinType.INNER).fetch(Favplace_.category, JoinType.LEFT);
       TypedQuery<Schedule> typedQuery = this.entityManager.createQuery(qriteriaQuery);
       return typedQuery.getSingleResult();
     }
