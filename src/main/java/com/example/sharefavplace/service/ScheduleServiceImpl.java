@@ -37,9 +37,26 @@ public class ScheduleServiceImpl implements ScheduleService {
     return scheduleRepository.save(schedule);
   }
 
+
+  /**
+   * スケジュール更新
+   * 
+   * @param schedule
+   * @return Schdule
+   */
   @Override
   public Schedule updateSchedule(Schedule schedule) {
     return scheduleRepository.updateSchedule(schedule);
+  }
+
+  /**
+   * スケジュール削除
+   * 
+   * @param schedule
+   */
+  @Override
+  public void deleteSchedule(Schedule schedule) {
+    scheduleRepository.delete(schedule);
   }
 
 }

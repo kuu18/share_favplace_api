@@ -13,7 +13,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ScheduleParam {
-  @NotNull(groups = UpdateDeleteGroup.class)
   private Integer id;
   @NotBlank(groups = {CreateGroup.class, UpdateDeleteGroup.class})
   private String start;

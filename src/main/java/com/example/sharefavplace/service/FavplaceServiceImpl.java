@@ -31,7 +31,7 @@ public class FavplaceServiceImpl implements FavplaceService {
   private final FavplaceRepository favplaceRepository;
   private final UserService userService;
   private final CategoryService categoryService;
-  private final S3FileService fileService;
+  private final S3FileService s3FileService;
   private final ScheduleService scheduleService;
   private Map<String, Object> responseBody = new HashMap<>();
 
@@ -86,8 +86,8 @@ public class FavplaceServiceImpl implements FavplaceService {
    * @return Favplace
    */
   @Override
-  public Favplace updateFavplace(Favplace favplace) {
-    return favplaceRepository.updateFavplace(favplace);
+  public void updateFavplace(Favplace favplace) {
+    favplaceRepository.updateFavplace(favplace);
   }
 
   /**
@@ -102,6 +102,16 @@ public class FavplaceServiceImpl implements FavplaceService {
   }
 
   /**
+   * Favplace削除
+   * 
+   * @param user
+   */
+  @Override
+  public void deleteFavplace(Favplace favplace) {
+    favplaceRepository.delete(favplace);
+  }
+
+  /**
    * favplace画像アップロード
    * 
    * @param image
@@ -111,7 +121,7 @@ public class FavplaceServiceImpl implements FavplaceService {
   public String uploadImage(MultipartFile image, String username) {
     LocalDateTime createAt = LocalDateTime.now();
     String s3Path = "/favplace";
-    String imageUrl = fileService.fileUpload(image, createAt, s3Path).toString();
+    String imageUrl = s3FileService.fileUpload(image, createAt, s3Path).toString();
     return imageUrl;
   }
 
@@ -171,7 +181,7 @@ public class FavplaceServiceImpl implements FavplaceService {
    * @param scheduleparam
    * @return responseBody
    */
-  public Map<String, Object> updateFavplace(Optional<MultipartFile> image, FavplaceParam favplaceParam,
+  public void updateFavplace(Optional<MultipartFile> image, FavplaceParam favplaceParam,
       Optional<ScheduleParam> scheduleParam) {
     // ユーザー取得
     User user = userService.findById(favplaceParam.getUserId()).get();
@@ -192,25 +202,29 @@ public class FavplaceServiceImpl implements FavplaceService {
     else {
       favplace.setImageUrl(oldFavplace.getImageUrl());
     }
-    // スケジュールがある場合スケジュールを更新
+    // スケジュールパラメーターがある場合
     if (scheduleParam.isPresent()) {
       Schedule schedule = new Schedule();
-      schedule = scheduleParam.get().getTimed()
-          ? ToScheduleMapper.INSTANCE.scheduleParamToscheduleWithTime(scheduleParam.get())
-          : ToScheduleMapper.INSTANCE.scheduleParamToschedule(scheduleParam.get());
-      schedule = scheduleService.updateSchedule(schedule);
-      favplace.setSchedule(schedule);
+        schedule = scheduleParam.get().getTimed()
+            ? ToScheduleMapper.INSTANCE.scheduleParamToscheduleWithTime(scheduleParam.get())
+            : ToScheduleMapper.INSTANCE.scheduleParamToschedule(scheduleParam.get());
+      // idがある場合更新
+      if(schedule.getId() != null) {
+        favplace.setSchedule(scheduleService.updateSchedule(schedule));
+      }
+      // idがない場合新規登録
+      else {
+        schedule.setUser(user);
+        schedule.setFavplace(favplace);
+        favplace.setSchedule(scheduleService.saveSchedule(schedule));
+      }
     }
-    // TODO スケジュールがない場合スケジュール削除
-    else {
-      favplace.setSchedule(oldFavplace.getSchedule());
+    // スケジュールパラメーターがないかつ、スケジュール登録がある場合スケジュール削除
+    else if (!scheduleParam.isPresent() && oldFavplace.getSchedule() != null) {
+      scheduleService.deleteSchedule(oldFavplace.getSchedule());
     }
     // favplace更新
-    favplace = updateFavplace(favplace);
-    // レスポンス生成
-    responseBody.put("favplace", favplace);
-    responseBody.put("message", "favplaceを更新しました。");
-    return responseBody;
+    updateFavplace(favplace);
   }
 
   /**
@@ -222,6 +236,31 @@ public class FavplaceServiceImpl implements FavplaceService {
   public Map<String, Object> getFavplacesByUserId(Integer userId, Integer pPageIndex) {
     responseBody.put("favplaces", getFavplacesByUserId(userId, pPageIndex, 12));
     responseBody.put("count", getUsersFavplacesCount(userId));
+    return responseBody;
+  }
+
+  /**
+   * ユーザー削除ロジック
+   * 
+   * @param param
+   * @return
+   */
+  public Map<String, Object> deleteFavplaceAndImage(FavplaceParam param) {
+    Favplace favplace = getFavplaceById(param.getId());
+    if (favplace == null) {
+      throw new RuntimeException("Favplaceが取得できません。");
+    }
+    // Favplace画像URL取得
+    String imageUrl = favplace.getImageUrl();
+    // AWSS3オブジェクトキーの取得
+    String imageObjectKey = s3FileService.getS3ObjectKeyFromUrl(imageUrl);
+    // 現在の画像がデフォルト画像でないならAWSS3からアバター画像削除する
+    if (!imageObjectKey.startsWith("default")){
+      s3FileService.fileDelete(imageObjectKey);
+    }
+    // Favplaceを削除する
+    deleteFavplace(favplace);
+    responseBody.put("message", "Favplaceを削除しました。");
     return responseBody;
   }
 

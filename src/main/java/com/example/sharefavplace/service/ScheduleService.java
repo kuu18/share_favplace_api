@@ -33,5 +33,12 @@ public interface ScheduleService {
    */
   public Schedule updateSchedule(Schedule schedule);
 
+  /**
+   * スケジュール削除
+   * 
+   * @param favplace
+   */
+  public void deleteSchedule(Schedule schedule);
+
 }
 

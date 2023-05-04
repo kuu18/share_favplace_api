@@ -103,6 +103,9 @@ public class FavplaceCustomRepositoryImpl implements FavplaceCustomRepository {
       root = qriteriaQuery.from(Favplace.class);
       qriteriaQuery.select(root)
           .where(root.get(Favplace_.id).in(favplace.getId()));
+      root.fetch(Favplace_.user, JoinType.INNER);
+      root.fetch(Favplace_.category, JoinType.LEFT);
+      root.fetch(Favplace_.schedule, JoinType.LEFT);
       TypedQuery<Favplace> typedQuery = this.entityManager.createQuery(qriteriaQuery);
       return typedQuery.getSingleResult();
     }
@@ -116,7 +119,7 @@ public class FavplaceCustomRepositoryImpl implements FavplaceCustomRepository {
    * @return Favplace
    */
   @Override
-  public Favplace updateFavplace(Favplace favplace) {
+  public void updateFavplace(Favplace favplace) {
     CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
     CriteriaUpdate<Favplace> criteriaUpdate = criteriaBuilder.createCriteriaUpdate(Favplace.class);
     Root<Favplace> root = criteriaUpdate.from(Favplace.class);
@@ -132,18 +135,9 @@ public class FavplaceCustomRepositoryImpl implements FavplaceCustomRepository {
         .where(root.get(Favplace_.id).in(favplace.getId()));
     Query query = this.entityManager.createQuery(criteriaUpdate);
     int count = query.executeUpdate();
-    if (count == 1) {
-      CriteriaQuery<Favplace> qriteriaQuery = criteriaBuilder.createQuery(Favplace.class);
-      root = qriteriaQuery.from(Favplace.class);
-      qriteriaQuery.select(root)
-          .where(root.get(Favplace_.id).in(favplace.getId()));
-      root.fetch(Favplace_.user, JoinType.INNER);
-      root.fetch(Favplace_.category, JoinType.LEFT);
-      root.fetch(Favplace_.schedule, JoinType.LEFT);
-      TypedQuery<Favplace> typedQuery = this.entityManager.createQuery(qriteriaQuery);
-      return typedQuery.getSingleResult();
+    if (count != 1) {
+      throw new RuntimeException("更新に失敗しました。");
     }
-    throw new RuntimeException("更新に失敗しました。");
   }
 
 }

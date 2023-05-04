@@ -1,6 +1,7 @@
 package com.example.sharefavplace.api;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -13,9 +14,11 @@ import com.example.sharefavplace.utils.ResponseUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -88,6 +91,27 @@ public class FavplaceResource {
     if (bindingResult.hasErrors()) {
       return ResponseEntity.badRequest().body(ResponseUtils.validationErrorResponse(bindingResult));
     }
-    return ResponseEntity.ok().body(favplaceService.updateFavplace(image, favplaceParams, scheduleParams));
+    // レスポンス生成
+    Map<String, Object> responseBody = new HashMap<>();
+    favplaceService.updateFavplace(image, favplaceParams, scheduleParams);
+    responseBody.put("favplace", favplaceService.getFavplaceById(favplaceParams.getId()));
+    responseBody.put("message", "favplaceを更新しました。");
+    return ResponseEntity.ok().body(responseBody);
+  }
+
+  /**
+   * Favplace削除
+   * 
+   * @param param
+   * @param bindingResult
+   * @return レスポンス
+   */
+  @DeleteMapping("/delete")
+  public ResponseEntity<Map<String, Object>> deletUser(@RequestBody @Validated FavplaceParam favplaceParam,
+      BindingResult bindingResult) {
+    if (bindingResult.hasErrors()) {
+      return ResponseEntity.badRequest().body(ResponseUtils.validationErrorResponse(bindingResult));
+    }
+    return ResponseEntity.ok().body(favplaceService.deleteFavplaceAndImage(favplaceParam));
   }
 }
