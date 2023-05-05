@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.sharefavplace.exceptions.ApiAuthException;
+import com.example.sharefavplace.exceptions.ApiNotFoundException;
 import com.example.sharefavplace.exceptions.ApiRequestException;
 import com.example.sharefavplace.mapper.ToUserMapper;
 import com.example.sharefavplace.model.Role;
@@ -231,6 +232,17 @@ public class UserServiceImpl implements UserService {
     String username = decodedJWT.getSubject();
     responseBody.put("user", findByUsername(username));
     return responseBody;
+  }
+
+  /**
+   * ユーザーIDによるユーザー取得
+   * 
+   * @param id
+   * @return
+   */
+  public User getUserById(Integer id) {
+    Optional<User> user = findById(id);
+    return user.orElseThrow(() -> new ApiNotFoundException("存在しないユーザーです。"));
   }
 
   /**

@@ -55,8 +55,18 @@ public class UserResource {
    * @return 全ユーザー
    */
   @GetMapping
-  public ResponseEntity<List<User>> getUsers(HttpServletRequest request) {
+  public ResponseEntity<List<User>> getUsers() {
     return ResponseEntity.ok().body(userService.findAllUser());
+  }
+
+  /**
+   * 全ユーザー取得
+   * 
+   * @return 全ユーザー
+   */
+  @GetMapping("/{id}")
+  public ResponseEntity<User> getUserById(@PathVariable Integer id) {
+    return ResponseEntity.ok().body(userService.getUserById(id));
   }
 
   /**
