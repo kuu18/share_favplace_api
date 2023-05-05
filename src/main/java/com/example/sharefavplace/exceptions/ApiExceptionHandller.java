@@ -52,7 +52,7 @@ public class ApiExceptionHandller extends ResponseEntityExceptionHandler {
   
 
   /**
-   * 
+   * badリクエストに関するExcptionハンドラー
    * 
    * @param e
    * @return
@@ -68,6 +68,12 @@ public class ApiExceptionHandller extends ResponseEntityExceptionHandler {
     return new ResponseEntity<>(apiException, badRequest);
   }
 
+  /**
+   * 認証に関するExceptionハンドラー
+   * 
+   * @param e
+   * @return
+   */
   @ExceptionHandler(value = {ApiAuthException.class})
   public ResponseEntity<Object> handleApiAuthException(ApiAuthException e) {
     HttpStatus unAuthorized = HttpStatus.UNAUTHORIZED;
@@ -77,5 +83,22 @@ public class ApiExceptionHandller extends ResponseEntityExceptionHandler {
       ZonedDateTime.now(ZoneId.of("Asia/Tokyo"))
     );
     return new ResponseEntity<>(apiException, unAuthorized);
+  }
+
+  /**
+   * NotFoundに関するExceptionハンドラー
+   * 
+   * @param e
+   * @return
+   */
+  @ExceptionHandler(value = {ApiNotFoundException.class})
+  public ResponseEntity<Object> handleApiNotFoundException(ApiNotFoundException e) {
+    HttpStatus notFound = HttpStatus.NOT_FOUND;
+    ApiException apiException = new ApiException(
+      e.getMessage(),
+      notFound,
+      ZonedDateTime.now(ZoneId.of("Asia/Tokyo"))
+    );
+    return new ResponseEntity<>(apiException, notFound);
   }
 }
