@@ -14,23 +14,10 @@ services:
     networks:
       - sharefavplaceapi
 
-  pgadmin4:
-    image: dpage/pgadmin4
-    ports:
-      - target: ${PGADMIN_PORT}
-        x-aws-protocol: https
-    env_file:
-      - ./environment/pgadmin4-variables.env
-    networks:
-      - sharefavplacepgadmin4
-
 networks:
   sharefavplaceapi:
     external: true
     name: ${AWS_SECURITY_GROUP_API}
-  sharefavplacepgadmin4:
-    external: true
-    name: ${AWS_SECURITY_GROUP_PGADMIN4}
 
 x-aws-cloudformation:
   Resources:
@@ -42,26 +29,12 @@ x-aws-cloudformation:
         UnhealthyThresholdCount: 5
         Matcher:
           HttpCode: 200
-    Pgadmin48888TargetGroup:
-      Properties:
-        HealthCheckPath: /misc/ping
-        HealthCheckTimeoutSeconds: 30
-        HealthCheckIntervalSeconds: 300
-        UnhealthyThresholdCount: 5
-        Matcher:
-          HttpCode: 200
     Api8080Listener:
       Properties:
         Certificates:
           - CertificateArn: ${AWS_CERTIFICATE}
         Protocol: HTTPS
         Port: 443
-    Pgadmin48888Listener:
-      Properties:
-        Certificates:
-          - CertificateArn: ${AWS_CERTIFICATE}
-        Protocol: HTTPS
-        Port: 8888
     ALBListenerHTTP:
       Type: "AWS::ElasticLoadBalancingV2::Listener"
       Properties:
