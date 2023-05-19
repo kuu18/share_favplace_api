@@ -38,6 +38,7 @@ build/
 dbdata
 mysql/data
 mysql/log
+pgadmin4
 
 ### Java ###
 *.class
@@ -50,3 +51,4 @@ mysql/log
 .bash_history
 .env
 .gitconfig
+environment

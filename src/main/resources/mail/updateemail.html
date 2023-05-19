@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <p th:inline="text">[[${appName}]]よりメールアドレス更新のお知らせです。</p>
+
+  <p>お客様がご更新いただいたメールアドレスを確認します。</p>
+
+  <p th:inline="text">[[${tokenLimit}]]以内に下記のリンクからメールアドレスの認証を完了してください。</p>
+
+  <a th:href="${url}">メールアドレスの認証</a>
+</body>
